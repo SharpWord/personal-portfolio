@@ -17,6 +17,12 @@
       "tech": "SpringBoot + Vue + MySQL",
       "desc": "80+接口开发，预约效率提升20%+，适配PC与移动端",
       "category": "Web全栈"
+    },
+    {
+      "name": "Markdown 编辑器",
+      "tech": "HTML + CSS + JS + marked.js",
+      "desc": "支持亮色/暗色主题切换、实时预览、代码高亮的在线Markdown编辑器",
+      "category": "Web全栈"
     }
   ]
 }
