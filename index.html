@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<meta name="theme-color" content="#ffffff">
+<title>胡景浩 - 个人主页</title>
+<meta name="description" content="胡景浩的个人主页，计算机科学与技术专业，全栈开发 / 嵌入式 / AIGC">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "PingFang SC", "Inter", -apple-system, "Helvetica Neue", sans-serif;
+  background: #fff;
+  color: #111;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ===== Scroll Reveal ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+              transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== Nav ===== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(24px, 5vw, 80px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+}
+.nav-logo {
+  font-size: clamp(16px, 1.25vw, 18px);
+  font-weight: 600;
+  color: #000;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+}
+.nav-links {
+  display: flex;
+  gap: clamp(20px, 3vw, 40px);
+  list-style: none;
+}
+.nav-links a {
+  font-size: clamp(14px, 1vw, 15px);
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+.nav-links a:hover { color: #000; }
+
+/* ===== Section Commons ===== */
+.section {
+  padding: clamp(60px, 8vw, 120px) clamp(24px, 5vw, 80px);
+  max-width: 900px;
+  margin: 0 auto;
+}
+.section-title {
+  font-size: clamp(24px, 2.5vw, 36px);
+  font-weight: 700;
+  color: #000;
+  margin-bottom: clamp(28px, 4vw, 56px);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+/* ===== Hero ===== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+}
+.hero-name {
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 700;
+  color: #000;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: clamp(12px, 1.5vw, 20px);
+}
+.hero-subtitle {
+  font-size: clamp(16px, 1.5vw, 22px);
+  color: #555;
+  font-weight: 400;
+  margin-bottom: clamp(8px, 1vw, 14px);
+}
+.hero-tags {
+  font-size: clamp(13px, 1.05vw, 15px);
+  color: #888;
+  margin-bottom: clamp(28px, 3vw, 44px);
+}
+.hero-btn {
+  display: inline-block;
+  padding: clamp(10px, 1.1vw, 14px) clamp(24px, 2.5vw, 40px);
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: clamp(6px, 0.6vw, 8px);
+  font-size: clamp(14px, 1.05vw, 15px);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  font-family: inherit;
+}
+.hero-btn:hover { background: #1a1a1a; }
+
+/* ===== About ===== */
+.about-text {
+  font-size: clamp(15px, 1.05vw, 16px);
+  color: #333;
+  line-height: 1.85;
+  margin-bottom: 20px;
+}
+.about-text:last-of-type { margin-bottom: 0; }
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(8px, 0.8vw, 12px);
+  margin-top: clamp(28px, 3vw, 44px);
+  justify-content: center;
+}
+.skill-tag {
+  padding: clamp(6px, 0.6vw, 8px) clamp(14px, 1.2vw, 18px);
+  background: #f5f5f5;
+  color: #333;
+  border-radius: 999px;
+  font-size: clamp(12px, 0.9vw, 13px);
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+.skill-tag:hover {
+  background: #000;
+  color: #fff;
+}
+
+/* ===== Quotes ===== */
+.quotes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(16px, 2vw, 28px);
+}
+.quote-card {
+  background: #fafafa;
+  border-radius: clamp(12px, 1.2vw, 16px);
+  padding: clamp(28px, 3vw, 44px) clamp(20px, 2vw, 28px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.quote-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
+.quote-text {
+  font-size: clamp(17px, 1.3vw, 20px);
+  font-weight: 600;
+  color: #111;
+  line-height: 1.7;
+  margin-bottom: clamp(12px, 1.2vw, 16px);
+}
+.quote-source {
+  font-size: clamp(12px, 0.85vw, 13px);
+  color: #999;
+  font-weight: 400;
+}
+
+/* ===== Works / 3D Sphere ===== */
+.works-container {
+  position: relative;
+  width: 100%;
+  height: clamp(400px, 42vw, 500px);
+  margin: 0 auto;
+  cursor: grab;
+}
+.works-container:active { cursor: grabbing; }
+.works-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Project detail card */
+.project-detail {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px 28px;
+  background: #fafafa;
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.25,1,0.5,1),
+              transform 0.4s cubic-bezier(0.25,1,0.5,1);
+}
+.project-detail.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.project-detail-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 8px;
+}
+.project-detail-tech {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+}
+.project-detail-desc {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.7;
+}
+.project-detail-placeholder {
+  text-align: center;
+  color: #bbb;
+  font-size: 14px;
+  padding: 16px 0;
+}
+
+/* ===== Footer ===== */
+.footer {
+  text-align: center;
+  padding: clamp(40px, 5vw, 80px) 24px;
+  border-top: 0.5px solid rgba(0,0,0,0.08);
+  margin-top: clamp(40px, 5vw, 80px);
+}
+.footer-contact {
+  font-size: clamp(13px, 0.95vw, 14px);
+  color: #666;
+  margin-bottom: 8px;
+}
+.footer-copy {
+  font-size: clamp(11px, 0.8vw, 12px);
+  color: #999;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .quotes-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-name {
+    font-size: clamp(28px, 8vw, 48px);
+  }
+  .works-container {
+    height: 400px;
+  }
+  .skill-tags {
+    gap: 8px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Nav ===== -->
+<nav class="nav">
+  <a href="#" class="nav-logo">胡景浩</a>
+  <ul class="nav-links">
+    <li><a href="#about">关于</a></li>
+    <li><a href="#works">作品</a></li>
+    <li><a href="#contact">联系</a></li>
+  </ul>
+</nav>
+
+<!-- ===== Hero ===== -->
+<section class="hero">
+  <h1 class="hero-name reveal">胡景浩</h1>
+  <p class="hero-subtitle reveal" style="transition-delay: 0.1s">计算机科学与技术 · 探索技术与创造的边界</p>
+  <p class="hero-tags reveal" style="transition-delay: 0.2s">四川大学锦江学院 / 全栈开发 / 嵌入式 / AIGC</p>
+  <a href="#about" class="hero-btn reveal" style="transition-delay: 0.3s">了解更多</a>
+</section>
+
+<!-- ===== About ===== -->
+<section id="about" class="section">
+  <h2 class="section-title reveal">关于我</h2>
+  <p class="about-text reveal" style="transition-delay: 0.05s">
+    计算机科学专业本科在读，专业排名前15%，连续两年获得学业优秀奖学金。具备前后端开发、嵌入式开发、AIGC 应用落地的全场景实操经验。熟练掌握 SpringBoot、Vue、Python 等技术栈，熟悉 MySQL 数据库设计与性能优化、接口开发与联调、软硬件问题排查与定位。
+  </p>
+  <p class="about-text reveal" style="transition-delay: 0.1s">
+    做事严谨细致，执行力强，善于快速学习新技术并独立解决技术问题。能够配合团队完成技术支持、系统维护、用户问题处理等相关工作，可快速适配岗位需求。
+  </p>
+  <div class="skill-tags reveal" style="transition-delay: 0.15s">
+    <span class="skill-tag">SpringBoot</span>
+    <span class="skill-tag">Vue</span>
+    <span class="skill-tag">Python</span>
+    <span class="skill-tag">MySQL</span>
+    <span class="skill-tag">Redis</span>
+    <span class="skill-tag">Docker</span>
+    <span class="skill-tag">Git</span>
+    <span class="skill-tag">Jenkins</span>
+    <span class="skill-tag">HTML/CSS/JS</span>
+    <span class="skill-tag">Element UI</span>
+    <span class="skill-tag">嵌入式开发</span>
+    <span class="skill-tag">AIGC</span>
+  </div>
+</section>
+
+<!-- ===== Quotes ===== -->
+<section class="section" style="padding-top: 0;">
+  <h2 class="section-title reveal">喜欢的句子</h2>
+  <div class="quotes-grid">
+    <div class="quote-card reveal" style="transition-delay: 0s">
+      <p class="quote-text">「长风破浪会有时，直挂云帆济沧海。」</p>
+      <p class="quote-source">—— 李白《行路难》</p>
+    </div>
+    <div class="quote-card reveal" style="transition-delay: 0.08s">
+      <p class="quote-text">「千磨万击还坚劲，任尔东西南北风。」</p>
+      <p class="quote-source">—— 郑板桥《竹石》</p>
+    </div>
+    <div class="quote-card reveal" style="transition-delay: 0.16s">
+      <p class="quote-text">「天生我材必有用，千金散尽还复来。」</p>
+      <p class="quote-source">—— 李白《将进酒》</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Works / 3D Sphere ===== -->
+<section id="works" class="section" style="padding-top: 0;">
+  <h2 class="section-title reveal">作品集</h2>
+  <div class="works-container reveal" id="sphere-container"></div>
+  <div class="project-detail" id="project-detail">
+    <p class="project-detail-placeholder">点击球面上的作品节点查看详情</p>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer id="contact" class="footer">
+  <p class="footer-contact">3425653390@qq.com &nbsp;|&nbsp; 17345857228</p>
+  <p class="footer-copy">&copy; 2025 胡景浩</p>
+</footer>
+
+<!-- ===== Three.js CDN ===== -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* ================================================================
+   Scroll Reveal — IntersectionObserver 驱动滚动入场动画
+   ================================================================ */
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+})();
+
+/* ================================================================
+   Three.js 3D 网状球体 — 作品集展示
+   ================================================================ */
+(function() {
+  const container = document.getElementById('sphere-container');
+  const detailCard = document.getElementById('project-detail');
+  if (!container) return;
+
+  // 从 JSON 配置文件加载作品数据
+  fetch('./projects.json')
+    .then(res => res.json())
+    .then(data => {
+      const projects = data.projects;
+      initSphere(projects);
+    })
+    .catch(err => {
+      console.warn('作品数据加载失败，请确认 projects.json 与 index.html 在同一目录', err);
+    });
+
+  function initSphere(projects) {
+    // ---- 分类颜色映射 ----
+    const categoryColors = {
+      'Web全栈': 0x3366cc,   // 深蓝
+      '嵌入式':  0x2d8659,   // 深绿
+      'AIGC':   0x7b3fa3,   // 深紫
+    };
+    const defaultColor = 0x1a1a1a;  // 无分类或未知分类用黑色
+
+    // ---- 基础场景 ----
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+  const SPHERE_RADIUS = 180;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, W / H, 10, 2000);
+  camera.position.z = 520;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.setClearColor(0xffffff, 0);
+  container.appendChild(renderer.domElement);
+
+  // 主旋转组
+  const sphereGroup = new THREE.Group();
+  scene.add(sphereGroup);
+
+  // ---- 工具函数：斐波那契球分布 ----
+  function fibonacciSphere(n, radius) {
+    const points = [];
+    const phi = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < n; i++) {
+      const y = 1 - (i / (n - 1)) * 2;
+      const radiusAtY = Math.sqrt(1 - y * y);
+      const theta = phi * i;
+      points.push({
+        x: Math.cos(theta) * radiusAtY * radius,
+        y: y * radius,
+        z: Math.sin(theta) * radiusAtY * radius
+      });
+    }
+    return points;
+  }
+
+  // ---- 工具函数：两点间角度距离 ----
+  function angularDist(a, b) {
+    const dot = (a.x*b.x + a.y*b.y + a.z*b.z) / (SPHERE_RADIUS * SPHERE_RADIUS);
+    return Math.acos(Math.max(-1, Math.min(1, dot)));
+  }
+
+  // ---- 网络点（~80个） + 连接线 ----
+  const networkPoints = fibonacciSphere(80, SPHERE_RADIUS);
+  const netPositions = new Float32Array(networkPoints.length * 3);
+  networkPoints.forEach((p, i) => {
+    netPositions[i*3] = p.x; netPositions[i*3+1] = p.y; netPositions[i*3+2] = p.z;
+  });
+
+  // 网络小点（Points）
+  const dotsGeom = new THREE.BufferGeometry();
+  dotsGeom.setAttribute('position', new THREE.BufferAttribute(netPositions, 3));
+  const dotsMat = new THREE.PointsMaterial({ color: 0x999999, size: 3.5 });
+  const dotsMesh = new THREE.Points(dotsGeom, dotsMat);
+  sphereGroup.add(dotsMesh);
+
+  // 邻近连线（每个点连最近2个）
+  const connectionSet = new Set();
+  const lineVertices = [];
+  for (let i = 0; i < networkPoints.length; i++) {
+    const neighbors = [];
+    for (let j = 0; j < networkPoints.length; j++) {
+      if (i === j) continue;
+      neighbors.push({ idx: j, dist: angularDist(networkPoints[i], networkPoints[j]) });
+    }
+    neighbors.sort((a, b) => a.dist - b.dist);
+    for (let k = 0; k < 2; k++) {
+      const a = Math.min(i, neighbors[k].idx);
+      const b = Math.max(i, neighbors[k].idx);
+      const key = a + '_' + b;
+      if (!connectionSet.has(key)) {
+        connectionSet.add(key);
+        lineVertices.push(
+          networkPoints[i].x, networkPoints[i].y, networkPoints[i].z,
+          networkPoints[neighbors[k].idx].x, networkPoints[neighbors[k].idx].y, networkPoints[neighbors[k].idx].z
+        );
+      }
+    }
+  }
+  const linesGeom = new THREE.BufferGeometry();
+  linesGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVertices), 3));
+  const linesMat = new THREE.LineBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.45 });
+  sphereGroup.add(new THREE.LineSegments(linesGeom, linesMat));
+
+  // ---- 经纬线框 ----
+  function createLatRing(latDeg) {
+    const lat = THREE.MathUtils.degToRad(latDeg);
+    const r = SPHERE_RADIUS * Math.cos(lat);
+    const y = SPHERE_RADIUS * Math.sin(lat);
+    const pts = [];
+    const segments = 80;
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r));
+    }
+    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.35 });
+    sphereGroup.add(new THREE.Line(geom, mat));
+  }
+  function createLonRing(lonDeg) {
+    const lon = THREE.MathUtils.degToRad(lonDeg);
+    const pts = [];
+    const segments = 80;
+    for (let i = 0; i <= segments; i++) {
+      const lat = -Math.PI/2 + (i / segments) * Math.PI;
+      pts.push(new THREE.Vector3(
+        SPHERE_RADIUS * Math.cos(lat) * Math.cos(lon),
+        SPHERE_RADIUS * Math.sin(lat),
+        SPHERE_RADIUS * Math.cos(lat) * Math.sin(lon)
+      ));
+    }
+    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.35 });
+    sphereGroup.add(new THREE.Line(geom, mat));
+  }
+  [-60, -30, 0, 30, 60].forEach(createLatRing);
+  [0, 30, 60, 90, 120, 150].forEach(createLonRing);
+
+  // ---- 辉光纹理（Canvas 生成） ----
+  function createGlowTexture(color) {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const half = size / 2;
+    const gradient = ctx.createRadialGradient(half, half, half * 0.05, half, half, half);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(0.15, color);
+    gradient.addColorStop(0.5, 'rgba(80,130,220,0.15)');
+    gradient.addColorStop(1, 'rgba(80,130,220,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    return new THREE.CanvasTexture(canvas);
+  }
+  const glowTex = createGlowTexture('rgba(80,140,240,0.9)');
+  const glowTexHover = createGlowTexture('rgba(100,170,255,1)');
+
+  // ---- 标签纹理 ----
+  function createLabelTexture(text) {
+    const fontSize = 36;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = `600 ${fontSize}px "PingFang SC", "Inter", sans-serif`;
+    const metrics = ctx.measureText(text);
+    const w = Math.ceil(metrics.width) + 40;
+    const h = fontSize + 20;
+    canvas.width = w; canvas.height = h;
+    ctx.font = `600 ${fontSize}px "PingFang SC", "Inter", sans-serif`;
+    ctx.fillStyle = '#111';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, w/2, h/2);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.minFilter = THREE.LinearFilter;
+    return { texture: tex, width: w, height: h };
+  }
+
+  // ---- 作品点：位置 + 网格 + 辉光 ----
+  const projectPoints3D = fibonacciSphere(projects.length, SPHERE_RADIUS);
+  const projectMeshes = [];   // 主球体 mesh
+  const projectGlows = [];    // 辉光 sprite
+  const projectData = [];     // 关联数据
+
+  projects.forEach((proj, idx) => {
+    const pos = projectPoints3D[idx];
+    const group = new THREE.Group();
+    group.position.set(pos.x, pos.y, pos.z);
+
+    // 主球体
+    const sphereGeom = new THREE.SphereGeometry(8, 32, 32);
+    const sphereColor = categoryColors[proj.category] || defaultColor;
+    const sphereMat = new THREE.MeshBasicMaterial({ color: sphereColor });
+    const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+    sphere.userData = { projectIndex: idx };
+    group.add(sphere);
+
+    // 辉光精灵
+    const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex, transparent: true, opacity: 0.7, depthTest: false, depthWrite: false
+    }));
+    glowSprite.scale.set(50, 50, 1);
+    group.add(glowSprite);
+
+    // 标签精灵
+    const labelData = createLabelTexture(proj.name);
+    const labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: labelData.texture, transparent: true, depthTest: false, depthWrite: false
+    }));
+    const labelScale = 160;
+    const ratio = labelData.height / labelData.width;
+    labelSprite.scale.set(labelScale, labelScale * ratio, 1);
+    labelSprite.position.y = 28;
+    group.add(labelSprite);
+
+    sphereGroup.add(group);
+    projectMeshes.push({ mesh: sphere, group, glow: glowSprite, label: labelSprite, data: proj, color: sphereColor });
+    projectGlows.push(glowSprite);
+    projectData.push(proj);
+
+    // 作品点连接到最近的2个网络点
+    const netNeighbors = [];
+    for (let j = 0; j < networkPoints.length; j++) {
+      netNeighbors.push({ idx: j, dist: angularDist(pos, networkPoints[j]) });
+    }
+    netNeighbors.sort((a, b) => a.dist - b.dist);
+    for (let k = 0; k < 2; k++) {
+      const np = networkPoints[netNeighbors[k].idx];
+      const linkGeom = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(pos.x, pos.y, pos.z),
+        new THREE.Vector3(np.x, np.y, np.z)
+      ]);
+      const linkLine = new THREE.Line(linkGeom,
+        new THREE.LineBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.5 }));
+      sphereGroup.add(linkLine);
+    }
+  });
+
+  // ---- 交互状态 ----
+  let isDragging = false;
+  let dragStart = { x: 0, y: 0 };
+  let dragMoved = 0;
+  let prevMouse = { x: 0, y: 0 };
+  let targetTheta = 0, targetPhi = 0.2;
+  let currentTheta = 0, currentPhi = 0.2;
+  let autoRotate = true;
+  const AUTO_SPEED = 0.004;
+  let hoveredIdx = -1;
+
+  // ---- 射线检测 ----
+  const raycaster = new THREE.Raycaster();
+  raycaster.params.Points.threshold = 10;
+  const mouse = new THREE.Vector2();
+
+  function getIntersections(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const targets = projectMeshes.map(p => p.mesh);
+    return raycaster.intersectObjects(targets);
+  }
+
+  function updateHover(event) {
+    const hits = getIntersections(event);
+    const newIdx = hits.length > 0 ? hits[0].object.userData.projectIndex : -1;
+    if (newIdx !== hoveredIdx) {
+      // 还原旧的
+      if (hoveredIdx >= 0) {
+        const pm = projectMeshes[hoveredIdx];
+        pm.mesh.material.color.set(pm.color || defaultColor);
+        pm.mesh.scale.set(1, 1, 1);
+        pm.glow.material.map = glowTex;
+        pm.glow.material.opacity = 0.7;
+        pm.glow.scale.set(50, 50, 1);
+      }
+      // 设置新的
+      if (newIdx >= 0) {
+        const pm = projectMeshes[newIdx];
+        pm.mesh.material.color.set(0x3366cc);
+        pm.mesh.scale.set(1.5, 1.5, 1.5);
+        pm.glow.material.map = glowTexHover;
+        pm.glow.material.opacity = 1;
+        pm.glow.scale.set(70, 70, 1);
+        autoRotate = false;
+      } else {
+        // 不再hover任何点，恢复自转
+        if (!isDragging) {
+          setTimeout(() => { if (hoveredIdx < 0 && !isDragging) autoRotate = true; }, 800);
+        }
+      }
+      hoveredIdx = newIdx;
+    }
+  }
+
+  function showProjectDetail(idx) {
+    const proj = projectData[idx];
+    detailCard.innerHTML = `
+      <p class="project-detail-name">${proj.name}</p>
+      <p class="project-detail-tech">${proj.tech}</p>
+      <p class="project-detail-desc">${proj.desc}</p>`;
+    detailCard.classList.add('visible');
+  }
+
+  // ---- 鼠标事件 ----
+  const canvas = renderer.domElement;
+
+  canvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    dragStart.x = e.clientX;
+    dragStart.y = e.clientY;
+    dragMoved = 0;
+    prevMouse.x = e.clientX;
+    prevMouse.y = e.clientY;
+    autoRotate = false;
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const dx = e.clientX - prevMouse.x;
+      const dy = e.clientY - prevMouse.y;
+      dragMoved += Math.abs(dx) + Math.abs(dy);
+      targetTheta += dx * 0.005;
+      targetPhi += dy * 0.005;
+      targetPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, targetPhi));
+      prevMouse.x = e.clientX;
+      prevMouse.y = e.clientY;
+    }
+    updateHover(e);
+  });
+
+  canvas.addEventListener('mouseup', (e) => {
+    // 如果几乎没有移动，视为点击
+    if (dragMoved < 4) {
+      const hits = getIntersections(e);
+      if (hits.length > 0) {
+        showProjectDetail(hits[0].object.userData.projectIndex);
+      }
+    }
+    isDragging = false;
+    if (hoveredIdx < 0) {
+      setTimeout(() => { if (!isDragging && hoveredIdx < 0) autoRotate = true; }, 600);
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    isDragging = false;
+    if (hoveredIdx >= 0) {
+      const pm = projectMeshes[hoveredIdx];
+      pm.mesh.material.color.set(pm.color || defaultColor);
+      pm.mesh.scale.set(1, 1, 1);
+      pm.glow.material.map = glowTex;
+      pm.glow.material.opacity = 0.7;
+      pm.glow.scale.set(50, 50, 1);
+      hoveredIdx = -1;
+    }
+    autoRotate = true;
+  });
+
+  // ---- 触摸事件 ----
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      dragMoved = 0;
+      prevMouse.x = e.touches[0].clientX;
+      prevMouse.y = e.touches[0].clientY;
+      autoRotate = false;
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => {
+    if (isDragging && e.touches.length === 1) {
+      const dx = e.touches[0].clientX - prevMouse.x;
+      const dy = e.touches[0].clientY - prevMouse.y;
+      dragMoved += Math.abs(dx) + Math.abs(dy);
+      targetTheta += dx * 0.005;
+      targetPhi += dy * 0.005;
+      targetPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, targetPhi));
+      prevMouse.x = e.touches[0].clientX;
+      prevMouse.y = e.touches[0].clientY;
+      updateHover({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchend', (e) => {
+    if (dragMoved < 10 && hoveredIdx >= 0) {
+      showProjectDetail(hoveredIdx);
+    }
+    isDragging = false;
+    if (hoveredIdx < 0) autoRotate = true;
+  });
+
+  // ---- 响应式 ----
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  });
+
+  // ---- 动画循环 ----
+  function animate() {
+    requestAnimationFrame(animate);
+
+    if (autoRotate) {
+      targetTheta += AUTO_SPEED;
+    }
+
+    // 平滑插值
+    currentTheta += (targetTheta - currentTheta) * 0.08;
+    currentPhi += (targetPhi - currentPhi) * 0.08;
+
+    sphereGroup.rotation.y = currentTheta;
+    sphereGroup.rotation.x = currentPhi;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+  }
+})();
+</script>
+
+</body>
+</html>

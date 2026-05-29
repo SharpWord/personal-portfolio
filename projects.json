@@ -1,0 +1,22 @@
+{
+  "projects": [
+    {
+      "name": "AI 小说推文动画平台",
+      "tech": "SpringBoot + Vue + Python",
+      "desc": "将视频制作周期从2天缩短至10分钟，对接Stable Diffusion与通义万相API",
+      "category": "AIGC"
+    },
+    {
+      "name": "智能环境测控终端",
+      "tech": "STM32F407 + 嵌入式C",
+      "desc": "完成8类传感器数据采集，覆盖12种异常场景处理，解决17个核心技术问题",
+      "category": "嵌入式"
+    },
+    {
+      "name": "智慧教室预约系统",
+      "tech": "SpringBoot + Vue + MySQL",
+      "desc": "80+接口开发，预约效率提升20%+，适配PC与移动端",
+      "category": "Web全栈"
+    }
+  ]
+}
