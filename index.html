@@ -647,16 +647,21 @@ body {
     }
   });
 
-  // ---- 交互状态 ----
+  // ---- 交互状态（四元数自由旋转） ----
   let isDragging = false;
   let dragStart = { x: 0, y: 0 };
   let dragMoved = 0;
   let prevMouse = { x: 0, y: 0 };
-  let targetTheta = 0, targetPhi = 0.2;
-  let currentTheta = 0, currentPhi = 0.2;
   let autoRotate = true;
-  const AUTO_SPEED = 0.004;
+  const AUTO_SPEED = 0.003;
   let hoveredIdx = -1;
+
+  // 用四元数驱动旋转，支持任意方向
+  const targetQuat = new THREE.Quaternion();
+  sphereGroup.quaternion.copy(targetQuat);
+
+  // 自转轴：倾斜轴，不是纯Y轴
+  const spinAxis = new THREE.Vector3(0.3, 0.85, 0.15).normalize();
 
   // ---- 射线检测 ----
   const raycaster = new THREE.Raycaster();
@@ -676,7 +681,6 @@ body {
     const hits = getIntersections(event);
     const newIdx = hits.length > 0 ? hits[0].object.userData.projectIndex : -1;
     if (newIdx !== hoveredIdx) {
-      // 还原旧的
       if (hoveredIdx >= 0) {
         const pm = projectMeshes[hoveredIdx];
         pm.mesh.material.color.set(pm.color || defaultColor);
@@ -685,7 +689,6 @@ body {
         pm.glow.material.opacity = 0.7;
         pm.glow.scale.set(50, 50, 1);
       }
-      // 设置新的
       if (newIdx >= 0) {
         const pm = projectMeshes[newIdx];
         pm.mesh.material.color.set(0x3366cc);
@@ -695,7 +698,6 @@ body {
         pm.glow.scale.set(70, 70, 1);
         autoRotate = false;
       } else {
-        // 不再hover任何点，恢复自转
         if (!isDragging) {
           setTimeout(() => { if (hoveredIdx < 0 && !isDragging) autoRotate = true; }, 800);
         }
@@ -718,6 +720,21 @@ body {
     detailCard.classList.add('visible');
   }
 
+  // ---- 屏幕向量映射到球面上的点 ----
+  function screenToSphere(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const x = (clientX - rect.left) / rect.width * 2 - 1;
+    const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    const v = new THREE.Vector3(x, y, 0);
+    const lenSq = v.x * v.x + v.y * v.y;
+    if (lenSq > 1) {
+      v.z = 0;
+    } else {
+      v.z = Math.sqrt(1 - lenSq);
+    }
+    return v.normalize();
+  }
+
   // ---- 鼠标事件 ----
   const canvas = renderer.domElement;
 
@@ -736,9 +753,12 @@ body {
       const dx = e.clientX - prevMouse.x;
       const dy = e.clientY - prevMouse.y;
       dragMoved += Math.abs(dx) + Math.abs(dy);
-      targetTheta += dx * 0.005;
-      targetPhi += dy * 0.005;
-      targetPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, targetPhi));
+      // 屏幕位移映射到球面旋转
+      const vFrom = screenToSphere(prevMouse.x, prevMouse.y);
+      const vTo = screenToSphere(e.clientX, e.clientY);
+      const q = new THREE.Quaternion().setFromUnitVectors(vFrom, vTo);
+      targetQuat.premultiply(q);
+      targetQuat.normalize();
       prevMouse.x = e.clientX;
       prevMouse.y = e.clientY;
     }
@@ -746,7 +766,6 @@ body {
   });
 
   canvas.addEventListener('mouseup', (e) => {
-    // 如果几乎没有移动，视为点击
     if (dragMoved < 4) {
       const hits = getIntersections(e);
       if (hits.length > 0) {
@@ -788,9 +807,11 @@ body {
       const dx = e.touches[0].clientX - prevMouse.x;
       const dy = e.touches[0].clientY - prevMouse.y;
       dragMoved += Math.abs(dx) + Math.abs(dy);
-      targetTheta += dx * 0.005;
-      targetPhi += dy * 0.005;
-      targetPhi = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, targetPhi));
+      const vFrom = screenToSphere(prevMouse.x, prevMouse.y);
+      const vTo = screenToSphere(e.touches[0].clientX, e.touches[0].clientY);
+      const q = new THREE.Quaternion().setFromUnitVectors(vFrom, vTo);
+      targetQuat.premultiply(q);
+      targetQuat.normalize();
       prevMouse.x = e.touches[0].clientX;
       prevMouse.y = e.touches[0].clientY;
       updateHover({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
@@ -813,20 +834,18 @@ body {
     camera.updateProjectionMatrix();
   });
 
-  // ---- 动画循环 ----
+  // ---- 动画循环（四元数 slerp 平滑） ----
   function animate() {
     requestAnimationFrame(animate);
 
     if (autoRotate) {
-      targetTheta += AUTO_SPEED;
+      const spinQ = new THREE.Quaternion().setFromAxisAngle(spinAxis, AUTO_SPEED);
+      targetQuat.premultiply(spinQ);
+      targetQuat.normalize();
     }
 
-    // 平滑插值
-    currentTheta += (targetTheta - currentTheta) * 0.08;
-    currentPhi += (targetPhi - currentPhi) * 0.08;
-
-    sphereGroup.rotation.y = currentTheta;
-    sphereGroup.rotation.x = currentPhi;
+    // 四元数球面线性插值，比欧拉角线性插值更自然
+    sphereGroup.quaternion.slerp(targetQuat, 0.08);
 
     renderer.render(scene, camera);
   }
