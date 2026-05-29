@@ -2,27 +2,28 @@
   "projects": [
     {
       "name": "AI 小说推文动画平台",
-      "tech": "SpringBoot + Vue + Python",
-      "desc": "将视频制作周期从2天缩短至10分钟，对接Stable Diffusion与通义万相API",
+      "tech": ["SpringBoot", "Vue", "Python", "Stable Diffusion"],
+      "desc": "一个人扛起全栈。从架构设计到AIGC落地，把视频制作从 2 天压缩到 10 分钟。",
       "category": "AIGC"
     },
     {
       "name": "智能环境测控终端",
-      "tech": "STM32F407 + 嵌入式C",
-      "desc": "完成8类传感器数据采集，覆盖12种异常场景处理，解决17个核心技术问题",
+      "tech": ["STM32F407", "嵌入式C", "ADC", "UART", "I2C"],
+      "desc": "裸机写驱动，17 个硬件 bug 逐个击破。让 STM32 读懂温度、湿度、光照。",
       "category": "嵌入式"
     },
     {
       "name": "智慧教室预约系统",
-      "tech": "SpringBoot + Vue + MySQL",
-      "desc": "80+接口开发，预约效率提升20%+，适配PC与移动端",
+      "tech": ["SpringBoot", "Vue", "MySQL", "Element UI"],
+      "desc": "80+ 接口、120+ 测试用例。把一间教室的预约审批从 1 天缩短到 2 小时。",
       "category": "Web全栈"
     },
     {
       "name": "Markdown 编辑器",
-      "tech": "HTML + CSS + JS + marked.js",
-      "desc": "支持亮色/暗色主题切换、实时预览、代码高亮的在线Markdown编辑器",
-      "category": "Web全栈"
+      "tech": ["HTML", "CSS", "JavaScript", "marked.js"],
+      "desc": "897 行手写代码，零构建工具。打开浏览器就能写的极简写作工具。",
+      "category": "Web全栈",
+      "demoLink": "markdown-editor.html"
     }
   ]
 }

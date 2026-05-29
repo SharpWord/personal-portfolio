@@ -231,10 +231,32 @@ body {
   color: #000;
   margin-bottom: 8px;
 }
-.project-detail-tech {
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tech-tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid;
+  background: transparent;
+}
+.demo-btn {
+  display: inline-block;
+  margin-top: 12px;
   font-size: 13px;
-  color: #666;
-  margin-bottom: 10px;
+  padding: 4px 14px;
+  border-radius: 14px;
+  border: 1px solid;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.demo-btn:hover {
+  opacity: 0.8;
 }
 .project-detail-desc {
   font-size: 14px;
@@ -684,10 +706,15 @@ body {
 
   function showProjectDetail(idx) {
     const proj = projectData[idx];
+    const colorMap = { 'Web全栈':'#3366cc', '嵌入式':'#2d8659', 'AIGC':'#7b3fa3' };
+    const tagColor = colorMap[proj.category] || '#666';
+    const tagsHTML = (proj.tech || []).map(t => `<span class="tech-tag" style="border-color:${tagColor};color:${tagColor};">${t}</span>`).join('');
+    const demoBtnHTML = proj.demoLink ? `<a href="${proj.demoLink}" class="demo-btn" target="_blank" style="border-color:${tagColor};color:${tagColor};">在线体验</a>` : '';
     detailCard.innerHTML = `
       <p class="project-detail-name">${proj.name}</p>
-      <p class="project-detail-tech">${proj.tech}</p>
-      <p class="project-detail-desc">${proj.desc}</p>`;
+      <div class="tech-tags">${tagsHTML}</div>
+      <p class="project-detail-desc">${proj.desc}</p>
+      ${demoBtnHTML}`;
     detailCard.classList.add('visible');
   }
 
