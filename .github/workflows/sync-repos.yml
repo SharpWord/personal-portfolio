@@ -1,0 +1,50 @@
+name: Sync GitHub Repos
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 每天 UTC 0:00 (北京时间 8:00)
+  push:
+    branches: [main]
+  workflow_dispatch:       # 手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch repos from GitHub API
+        run: |
+          curl -s "https://api.github.com/users/SharpWord/repos?sort=updated&per_page=30" \
+            | python3 -c "
+import json, sys
+repos = json.load(sys.stdin)
+# 只保留页面需要的字段
+out = []
+for r in repos:
+    if r.get('fork'): continue
+    if r['name'] == 'personal-portfolio': continue
+    out.append({
+        'name': r['name'],
+        'description': r.get('description') or '',
+        'html_url': r['html_url'],
+        'language': r.get('language'),
+        'stargazers_count': r['stargazers_count'],
+        'updated_at': r['updated_at'],
+    })
+print(json.dumps(out, ensure_ascii=False))
+" > repos.json
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add repos.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "sync: update repos.json"
+            git push
+          fi

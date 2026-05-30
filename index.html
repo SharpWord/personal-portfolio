@@ -287,6 +287,111 @@ body {
   color: #999;
 }
 
+/* ===== GitHub Repos ===== */
+.github-section {
+  background: #fafafa;
+  border-top: 1px solid #eee;
+}
+.github-intro {
+  text-align: center;
+  color: #666;
+  font-size: clamp(14px, 0.95vw, 15px);
+  margin-bottom: clamp(28px, 2.5vw, 40px);
+  line-height: 1.6;
+}
+.github-intro a {
+  color: #000;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.github-intro a:hover {
+  color: #3366cc;
+}
+.repos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: clamp(14px, 1.5vw, 20px);
+}
+.repo-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: clamp(10px, 1vw, 14px);
+  padding: clamp(20px, 2vw, 28px);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.7vw, 10px);
+}
+.repo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+}
+.repo-name {
+  font-size: clamp(16px, 1.1vw, 18px);
+  font-weight: 600;
+  color: #111;
+  text-decoration: none;
+}
+.repo-name:hover {
+  color: #3366cc;
+}
+.repo-desc {
+  font-size: clamp(12px, 0.85vw, 13px);
+  color: #666;
+  line-height: 1.5;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.repo-meta {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1vw, 14px);
+  font-size: clamp(11px, 0.75vw, 12px);
+  color: #999;
+  flex-wrap: wrap;
+}
+.repo-lang {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.repo-lang-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.repo-loading {
+  text-align: center;
+  color: #999;
+  padding: 40px;
+  font-size: 14px;
+}
+.repo-error {
+  text-align: center;
+  color: #c00;
+  padding: 20px;
+  font-size: 13px;
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: clamp(16px, 1.5vw, 24px);
+  margin-bottom: clamp(6px, 0.6vw, 10px);
+}
+.footer-links a {
+  color: #666;
+  text-decoration: none;
+  font-size: clamp(12px, 0.85vw, 13px);
+  transition: color 0.2s ease;
+}
+.footer-links a:hover {
+  color: #000;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .quotes-grid {
@@ -377,8 +482,23 @@ body {
   </div>
 </section>
 
+<!-- ===== GitHub Repos ===== -->
+<section id="github" class="section github-section">
+  <h2 class="section-title reveal">GitHub 仓库</h2>
+  <p class="github-intro reveal">
+    所有公开仓库自动同步自 <a href="https://github.com/SharpWord" target="_blank">SharpWord</a>
+  </p>
+  <div class="repos-grid reveal" id="repos-grid">
+    <p class="repo-loading">加载中...</p>
+  </div>
+</section>
+
 <!-- ===== Footer ===== -->
 <footer id="contact" class="footer">
+  <div class="footer-links">
+    <a href="https://github.com/SharpWord" target="_blank">GitHub</a>
+    <a href="mailto:3425653390@qq.com">Email</a>
+  </div>
   <p class="footer-contact">3425653390@qq.com &nbsp;|&nbsp; 17345857228</p>
   <p class="footer-copy">&copy; 2025 胡景浩</p>
 </footer>
@@ -850,6 +970,62 @@ body {
     renderer.render(scene, camera);
   }
   animate();
+
+  // ---- GitHub 仓库加载 ----
+  const langColors = {
+    JavaScript: '#f1e05a', TypeScript: '#3178c6', Python: '#3572A5', Java: '#b07219',
+    HTML: '#e34c26', CSS: '#563d7c', C: '#555', 'C++': '#f34b7d', 'C#': '#178600',
+    Go: '#00ADD8', Rust: '#dea584', Swift: '#F05138', Kotlin: '#A97BFF',
+    Dart: '#00B4AB', Vue: '#41b883', Shell: '#89e051', Ruby: '#701516',
+    PHP: '#4F5D95', Jupyter: '#DA5B0B', MDX: '#fcb32c', SCSS: '#c6538c',
+  };
+
+  async function loadRepos() {
+    const grid = document.getElementById('repos-grid');
+    let repos = [];
+
+    // 1) 尝试本地 repos.json（Actions 生成）
+    try {
+      const r = await fetch('repos.json');
+      if (r.ok) repos = await r.json();
+    } catch (_) {}
+
+    // 2) 尝试 GitHub API 实时拉取
+    try {
+      const r = await fetch('https://api.github.com/users/SharpWord/repos?sort=updated&per_page=30');
+      if (r.ok) repos = await r.json();
+    } catch (_) {}
+
+    if (!repos.length) {
+      grid.innerHTML = '<p class="repo-error">暂时无法加载仓库，请稍后再试</p>';
+      return;
+    }
+
+    // 过滤掉 fork 和 personal-portfolio 本身
+    repos = repos.filter(r => !r.fork && r.name !== 'personal-portfolio');
+    if (repos.length === 0) {
+      grid.innerHTML = '<p class="repo-loading">暂无公开仓库</p>';
+      return;
+    }
+
+    grid.innerHTML = repos.map(r => {
+      const color = langColors[r.language] || '#999';
+      const desc = r.description || '';
+      const updated = new Date(r.updated_at).toLocaleDateString('zh-CN');
+      return `
+        <a class="repo-card" href="${r.html_url}" target="_blank">
+          <span class="repo-name">${r.name}</span>
+          ${desc ? `<span class="repo-desc">${desc}</span>` : ''}
+          <span class="repo-meta">
+            <span class="repo-lang"><span class="repo-lang-dot" style="background:${color}"></span> ${r.language || '--'}</span>
+            <span>★ ${r.stargazers_count}</span>
+            <span>${updated}</span>
+          </span>
+        </a>`;
+    }).join('');
+  }
+
+  loadRepos();
   }
 })();
 </script>
