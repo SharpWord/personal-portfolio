@@ -61,6 +61,54 @@
       padding: 8px 14px; color: #fff; font-size: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none;
     }
+
+    /* ===== 纪录片弹出卡片 ===== */
+    #docPopup {
+      position: absolute; bottom: -520px; left: 50%; transform: translateX(-50%); z-index: 50;
+      width: min(620px, 92vw); max-height: 480px; overflow-y: auto;
+      background: rgba(10, 18, 30, 0.94); backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px;
+      padding: 24px 28px 20px; color: #e4e6ea;
+      transition: bottom 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+    }
+    #docPopup.visible { bottom: 28px; }
+    #docPopup .pop-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    #docPopup .pop-flag   { font-size: 26px; }
+    #docPopup .pop-name   { font-size: 18px; font-weight: 700; color: #fff; margin-left: 8px; }
+    #docPopup .pop-close  {
+      background: none; border: none; color: #8899aa; font-size: 20px;
+      cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1;
+      transition: background 0.2s;
+    }
+    #docPopup .pop-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    #docPopup .doc-item {
+      padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    #docPopup .doc-item:first-of-type { padding-top: 0; border-top: none; }
+    #docPopup .doc-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    #docPopup .doc-title  { font-size: 14px; font-weight: 600; color: #ddd; }
+    #docPopup .doc-rating {
+      font-size: 11px; font-weight: 700; color: #f0b90b;
+      background: rgba(240,185,11,0.12); border-radius: 4px; padding: 1px 6px;
+    }
+    #docPopup .doc-wonders { font-size: 12px; color: #889; line-height: 1.5; margin-bottom: 4px; }
+    #docPopup .platform-tag {
+      display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 3px;
+      background: rgba(100,180,120,0.12); color: #8c8; margin-right: 4px;
+    }
+    #docPopup .pop-empty { text-align: center; color: #556; font-size: 13px; padding: 12px 0; }
+    #docPopup::-webkit-scrollbar { width: 4px; }
+    #docPopup::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ===== 标记点图例 ===== */
+    #markerHint {
+      position: absolute; top: 60px; left: 16px; z-index: 10;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); border-radius: 8px;
+      padding: 8px 14px; color: #8899aa; font-size: 11px;
+      border: 1px solid rgba(255,255,255,0.08); pointer-events: none;
+      transition: opacity 0.5s;
+    }
   </style>
 </head>
 <body>
@@ -74,10 +122,20 @@
   </div>
 
   <div id="statusBar">高度: -- | Lv.6</div>
+  <div id="markerHint">每颗亮点 = 一个国家 · 点击查看纪录片</div>
   <div id="helpPanel">
     <span><span class="key">滚轮</span> 缩放</span>
     <span><span class="key">拖拽</span> 旋转</span>
     <span><span class="key">R</span> 重置</span>
+  </div>
+
+  <!-- 纪录片弹出卡片 -->
+  <div id="docPopup">
+    <div class="pop-header">
+      <div><span class="pop-flag" id="popFlag"></span><span class="pop-name" id="popName"></span></div>
+      <button class="pop-close" onclick="document.getElementById('docPopup').classList.remove('visible')">✕</button>
+    </div>
+    <div id="popContent"></div>
   </div>
 
   <script>
@@ -100,6 +158,13 @@
       var MAX_HEIGHT = 3000000;
       var CENTER_LON = 116.4;
       var CENTER_LAT = 39.9;
+
+      // 读取 URL 参数：?country=中国&lon=116.4&lat=39.9
+      var params = new URLSearchParams(window.location.search);
+      var urlCountry = params.get('country') || '';
+      var urlLon = parseFloat(params.get('lon')) || CENTER_LON;
+      var urlLat = parseFloat(params.get('lat')) || CENTER_LAT;
+      var hasTarget = params.has('lon') && params.has('lat');
 
       scene.screenSpaceCameraController.enableTranslate = false;
       scene.screenSpaceCameraController.enableTilt = false;
@@ -269,21 +334,25 @@
       );
 
       // ================================================================
-      //  初始视角 —— 北京，2000 公里
+      //  初始视角
+      //  有 ?country=XX 参数时飞向该国，否则北京 2000 公里
       // ================================================================
+      var initLon = hasTarget ? urlLon : CENTER_LON;
+      var initLat = hasTarget ? urlLat : CENTER_LAT;
       viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(CENTER_LON, CENTER_LAT, MIN_HEIGHT),
+        destination: Cesium.Cartesian3.fromDegrees(initLon, initLat, MIN_HEIGHT),
         orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
       });
 
       // ================================================================
       //  状态栏
       // ================================================================
+      var statusLabel = urlCountry || '高度';
       var statusBar = document.getElementById('statusBar');
       scene.preRender.addEventListener(function () {
         var h = viewer.camera.positionCartographic.height;
         var km = (h / 1000).toFixed(0);
-        statusBar.textContent = '高度: ' + km + '公里 | Lv.6 | ' +
+        statusBar.textContent = (urlCountry ? urlCountry + ' | ' : '') + '高度: ' + km + '公里 | Lv.6 | ' +
           (h <= MIN_HEIGHT + 100 ? '最近' : h >= MAX_HEIGHT - 100 ? '最远' : '');
       });
 
@@ -310,7 +379,263 @@
         }
       });
 
-      console.log('Level6 | 北京 2000-3000km | 4096瓦片 | Image()背景预加载');
+      // ================================================================
+      //  纪录片数据：国家 → 经纬度 → 纪录片列表
+      // ================================================================
+      var countryDocs = [
+        { name:'中国', flag:'🇨🇳', lon:116.4, lat:39.9, docs:[
+          {title:'《美丽中国》',rating:'9.3',wonders:'青藏高原冰川、云南热带雨林、桂林喀斯特峰林、贵州溶洞、丹霞地貌、神农架原始森林',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《航拍中国》（全四季）',rating:'9.0~9.4',wonders:'张家界峰林、九寨沟彩池、塔克拉玛干沙漠、黄山云海、壶口瀑布、长白山天池、雅鲁藏布江峡谷',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《第三极》',rating:'9.4',wonders:'珠穆朗玛峰冰塔林、纳木错、羌塘无人区、藏北高原湿地、喜马拉雅山脉',pf:['哔哩哔哩','腾讯视频']}
+        ]},
+        { name:'日本', flag:'🇯🇵', lon:138, lat:37, docs:[
+          {title:'《野性日本》',rating:'8.8',wonders:'富士山火山地貌、北海道流冰雪原、屋久岛原始森林、冲绳珊瑚礁、知床半岛海岸',pf:['哔哩哔哩']}
+        ]},
+        { name:'俄罗斯', flag:'🇷🇺', lon:90, lat:62, docs:[
+          {title:'《野性俄罗斯》',rating:'8.9',wonders:'贝加尔湖、勘察加火山群、西伯利亚泰加林、北极苔原、高加索山脉',pf:['哔哩哔哩']}
+        ]},
+        { name:'印度', flag:'🇮🇳', lon:78, lat:22, docs:[
+          {title:'《野性印度》',rating:'8.7',wonders:'喜马拉雅南麓山地、西高止山雨林、塔尔沙漠、恒河湿地、德干高原',pf:['哔哩哔哩']}
+        ]},
+        { name:'印度尼西亚', flag:'🇮🇩', lon:115, lat:-2, docs:[
+          {title:'《野性印度尼西亚》',rating:'8.6',wonders:'科莫多岛、婆罗洲雨林、巴厘岛火山、苏拉威西珊瑚海、爪哇火山群',pf:['哔哩哔哩']}
+        ]},
+        { name:'斯里兰卡', flag:'🇱🇰', lon:80.7, lat:7.9, docs:[
+          {title:'《奇迹时刻：斯里兰卡》',rating:'7.6',wonders:'辛哈拉加热带雨林、亚当峰山地、印度洋海岸线、高山茶园地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'泰国', flag:'🇹🇭', lon:101, lat:15, docs:[
+          {title:'《野性泰国》',rating:'8.5',wonders:'清迈山地雨林、安达曼海珊瑚岛、喀斯特岩溶海岛、湄公河三角洲湿地',pf:['哔哩哔哩']}
+        ]},
+        { name:'冰岛', flag:'🇮🇸', lon:-19, lat:64.5, docs:[
+          {title:'《冰与火之地：狂野冰岛》',rating:'8.8',wonders:'蓝冰洞、间歇泉、黑沙滩、钻石沙滩、火山地貌、北极极光、巨型瀑布群',pf:['哔哩哔哩']}
+        ]},
+        { name:'挪威', flag:'🇳🇴', lon:10, lat:61, docs:[
+          {title:'《野性斯堪的纳维亚》',rating:'8.7',wonders:'挪威峡湾、罗弗敦群岛、北极极光、冰川雪原、北大西洋海岸',pf:['哔哩哔哩']}
+        ]},
+        { name:'瑞士', flag:'🇨🇭', lon:8, lat:46.8, docs:[
+          {title:'《阿尔卑斯：自然的巨人》',rating:'8.9',wonders:'阿尔卑斯雪山冰川、高山冰蚀湖泊、高山草甸、山地峡谷地貌',pf:['哔哩哔哩','腾讯视频']}
+        ]},
+        { name:'意大利', flag:'🇮🇹', lon:12.5, lat:42, docs:[
+          {title:'《野性意大利》',rating:'8.5',wonders:'多洛米蒂山、埃特纳活火山、地中海海岸、亚平宁丘陵、阿尔卑斯北麓',pf:['哔哩哔哩']}
+        ]},
+        { name:'英国', flag:'🇬🇧', lon:-2, lat:54.5, docs:[
+          {title:'《不列颠群岛自然史》',rating:'8.8',wonders:'苏格兰高地、巨人堤道、英格兰湖区、威尔士峡谷、北海悬崖海岸',pf:['哔哩哔哩']}
+        ]},
+        { name:'法国', flag:'🇫🇷', lon:2.5, lat:46.5, docs:[
+          {title:'《野性法兰西》',rating:'8.6',wonders:'阿尔卑斯南麓、普罗旺斯丘陵、布列塔尼悬崖、中央高原火山地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'西班牙', flag:'🇪🇸', lon:-3.5, lat:40, docs:[
+          {title:'《野性伊比利亚》',rating:'8.7',wonders:'比利牛斯山脉、安达卢西亚荒漠、地中海海岸、加那利群岛火山',pf:['哔哩哔哩']}
+        ]},
+        { name:'肯尼亚 / 坦桑尼亚', flag:'🇰🇪', lon:36, lat:-2, docs:[
+          {title:'《塞伦盖蒂》',rating:'9.3',wonders:'东非大草原、角马年度大迁徙、马拉河、乞力马扎罗雪山、恩戈罗恩戈罗火山口',pf:['哔哩哔哩','腾讯视频']}
+        ]},
+        { name:'南非 / 纳米比亚', flag:'🇿🇦', lon:22, lat:-25, docs:[
+          {title:'《BBC 非洲》',rating:'9.7',wonders:'纳米布红色沙漠、卡拉哈里盆地、好望角两洋交汇、桌山、刚果雨林边缘',pf:['哔哩哔哩','腾讯视频']}
+        ]},
+        { name:'埃及', flag:'🇪🇬', lon:30, lat:26.5, docs:[
+          {title:'《野性尼罗河》',rating:'8.6',wonders:'尼罗河峡谷、撒哈拉沙漠、红海珊瑚礁、西奈山地、尼罗河三角洲湿地',pf:['哔哩哔哩']}
+        ]},
+        { name:'马达加斯加', flag:'🇲🇬', lon:47, lat:-19, docs:[
+          {title:'《马达加斯加》（BBC）',rating:'9.2',wonders:'猴面包树大道、喀斯特石林、东部热带雨林、南部荒漠孤岛地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'埃塞俄比亚', flag:'🇪🇹', lon:40, lat:9, docs:[
+          {title:'《埃塞俄比亚：非洲屋脊》',rating:'8.5',wonders:'东非大裂谷、尔塔阿雷熔岩湖、塞米恩山脉高原、火山荒漠地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'摩洛哥', flag:'🇲🇦', lon:-7, lat:31.5, docs:[
+          {title:'《野性摩洛哥》',rating:'8.4',wonders:'阿特拉斯山脉、撒哈拉沙漠边缘、大西洋悬崖海岸、山地峡谷',pf:['哔哩哔哩']}
+        ]},
+        { name:'美国', flag:'🇺🇸', lon:-105, lat:40, docs:[
+          {title:'《黄石公园》',rating:'8.7',wonders:'大棱镜彩泉、老忠实间歇泉、黄石大峡谷、地热台地、落基山原始森林',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《北美国家公园全记录》',rating:'8.9',wonders:'科罗拉多大峡谷、优胜美地花岗岩巨岩、阿拉斯加冰川、佛罗里达大沼泽、夏威夷火山',pf:['哔哩哔哩']}
+        ]},
+        { name:'加拿大', flag:'🇨🇦', lon:-105, lat:58, docs:[
+          {title:'《野性加拿大》',rating:'8.8',wonders:'落基山脉、班夫冰川湖泊、尼亚加拉大瀑布、北极冻土、五大湖湿地、北方针叶林',pf:['哔哩哔哩']}
+        ]},
+        { name:'墨西哥', flag:'🇲🇽', lon:-102, lat:23, docs:[
+          {title:'《墨西哥：生命狂欢之地》',rating:'8.6',wonders:'尤卡坦半岛天坑群、铜峡谷、索诺兰沙漠、东马德雷火山带、加勒比珊瑚海岸',pf:['哔哩哔哩']}
+        ]},
+        { name:'巴西', flag:'🇧🇷', lon:-53, lat:-10, docs:[
+          {title:'《野性巴西》',rating:'8.6',wonders:'亚马逊热带雨林、伊瓜苏大瀑布、潘塔纳尔湿地、巴西高原喀斯特地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'秘鲁', flag:'🇵🇪', lon:-75, lat:-10, docs:[
+          {title:'《野性秘鲁》',rating:'8.5',wonders:'安第斯山脉、亚马逊源头雨林、的的喀喀湖、科尔卡大峡谷高原地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'智利', flag:'🇨🇱', lon:-71, lat:-35, docs:[
+          {title:'《野性智利》',rating:'8.7',wonders:'阿塔卡马干沙漠、巴塔哥尼亚冰川、复活节岛、安第斯火山群、南部峡湾海岸',pf:['哔哩哔哩']}
+        ]},
+        { name:'阿根廷', flag:'🇦🇷', lon:-65, lat:-38, docs:[
+          {title:'《巴塔哥尼亚：隐秘天堂》',rating:'8.8',wonders:'莫雷诺冰川、巴塔哥尼亚荒原、潘帕斯草原、火地岛、安第斯山东麓峡谷',pf:['哔哩哔哩']}
+        ]},
+        { name:'哥伦比亚', flag:'🇨🇴', lon:-74, lat:4, docs:[
+          {title:'《野性哥伦比亚》',rating:'8.4',wonders:'安第斯纵切山谷、亚马逊西缘雨林、加勒比海岸火山、云雾森林地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'澳大利亚', flag:'🇦🇺', lon:133, lat:-25, docs:[
+          {title:'《狂野澳大利亚》',rating:'8.9',wonders:'乌鲁鲁巨石、大堡礁珊瑚群、辛普森红沙漠、塔斯马尼亚雨林、蓝山峡谷',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《BBC 大堡礁》',rating:'9.3',wonders:'全球最大珊瑚礁系统、海底山脉、热带深海地貌、珊瑚生态系统',pf:['哔哩哔哩']}
+        ]},
+        { name:'新西兰', flag:'🇳🇿', lon:172, lat:-41, docs:[
+          {title:'《新西兰：神话之岛》',rating:'9.1',wonders:'米尔福德峡湾、南阿尔卑斯雪山、罗托鲁瓦地热火山、温带原始雨林',pf:['哔哩哔哩','腾讯视频']}
+        ]},
+        { name:'巴布亚新几内亚', flag:'🇵🇬', lon:145, lat:-6, docs:[
+          {title:'《野性巴布亚新几内亚》',rating:'8.5',wonders:'热带雨林山地、活火山群、珊瑚环礁、雨林峡谷地貌',pf:['哔哩哔哩']}
+        ]},
+        { name:'南北极地', flag:'🧊', lon:0, lat:82, docs:[
+          {title:'《冰冻星球》',rating:'9.7',wonders:'南极冰盖、北极海冰、冰川崩解、极地极光、冻土苔原生态',pf:['哔哩哔哩','腾讯视频']}
+        ]},
+        { name:'全球综合全景', flag:'🌏', lon:116.4, lat:39.9, docs:[
+          {title:'《地球脉动 1-3 季》',rating:'9.7/9.8/9.9',wonders:'覆盖全球七大洲各国标志性地貌，自然纪录片天花板作品',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《七个世界，一个星球》',rating:'9.7',wonders:'按七大洲分集，每一集囊括大洲内多个国家代表性自然奇观',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《蓝色星球 1-2 季》',rating:'9.6/9.8',wonders:'全球海洋奇观合集，涵盖各国海岸、深海海沟、珊瑚群岛地貌',pf:['哔哩哔哩','腾讯视频']},
+          {title:'《完美星球》',rating:'9.6',wonders:'以火山、阳光、天气、海洋四大力量讲解全球各国地貌形成原理',pf:['哔哩哔哩','腾讯视频']}
+        ]}
+      ];
+
+      // ================================================================
+      //  创建标记点（Billboard 发光点 + Label 国家名）
+      // ================================================================
+      var markerSize = 10; // 像素大小，2000km 高度可见
+
+      countryDocs.forEach(function(c) {
+        var entity = viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(c.lon, c.lat),
+          billboard: {
+            image: createMarkerImage(),
+            width: markerSize,
+            height: markerSize,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          },
+          label: {
+            text: c.flag + ' ' + c.name,
+            font: '12px "PingFang SC","Inter",sans-serif',
+            fillColor: Cesium.Color.fromCssColorString('#ffffff'),
+            outlineColor: Cesium.Color.fromCssColorString('#000000'),
+            outlineWidth: 2,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cesium.Cartesian2(0, -16),
+            verticalOrigin: Cesium.VerticalOrigin.TOP,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 40000000),
+          },
+          _countryData: c,
+        });
+      });
+
+      // Canvas 生成发光圆点纹理
+      function createMarkerImage() {
+        var size = 32;
+        var canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        var half = size / 2;
+        var grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.15, 'rgba(100,180,255,0.9)');
+        grad.addColorStop(0.4, 'rgba(60,120,220,0.5)');
+        grad.addColorStop(1, 'rgba(60,120,220,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, size, size);
+        return canvas;
+      }
+
+      // ================================================================
+      //  点击标记 → 弹出纪录片卡片
+      // ================================================================
+      var popup = document.getElementById('docPopup');
+      var popFlag = document.getElementById('popFlag');
+      var popName = document.getElementById('popName');
+      var popContent = document.getElementById('popContent');
+      var markerHint = document.getElementById('markerHint');
+
+      var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+      handler.setInputAction(function (click) {
+        var picked = viewer.scene.pick(click.position);
+        if (picked && picked.id && picked.id._countryData) {
+          var c = picked.id._countryData;
+
+          // 飞向该国
+          viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(c.lon, c.lat, MIN_HEIGHT),
+            orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
+            duration: 1.5,
+          });
+
+          // 填充弹出卡片
+          popFlag.textContent = c.flag;
+          popName.textContent = c.name;
+          var itemsHtml = '';
+          c.docs.forEach(function(d) {
+            itemsHtml += '<div class="doc-item">';
+            itemsHtml += '<div class="doc-title-row"><span class="doc-title">' + d.title + '</span><span class="doc-rating">⭐ ' + d.rating + '</span></div>';
+            itemsHtml += '<div class="doc-wonders">' + d.wonders + '</div>';
+            d.pf.forEach(function(p) {
+              itemsHtml += '<span class="platform-tag">' + p + '</span>';
+            });
+            itemsHtml += '</div>';
+          });
+          popContent.innerHTML = itemsHtml;
+          popup.classList.add('visible');
+
+          // 隐藏标记点提示
+          markerHint.style.opacity = '0';
+        } else {
+          // 点击空白区域关闭
+          popup.classList.remove('visible');
+          markerHint.style.opacity = '1';
+        }
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+      // 遮罩加载完毕后显示提示
+      setTimeout(function () {
+        var check = setInterval(function () {
+          if (overlay.classList.contains('hidden')) {
+            markerHint.style.opacity = '1';
+            clearInterval(check);
+            // 如果从 nature-docs 跳转过来，自动弹出卡片
+            if (hasTarget && urlCountry) {
+              autoShowCountry(urlCountry);
+            }
+          }
+        }, 500);
+      }, 3000);
+
+      function autoShowCountry(name) {
+        var found = null;
+        countryDocs.forEach(function(c) {
+          if (c.name.indexOf(name) !== -1 || name.indexOf(c.name) !== -1) {
+            found = c;
+          }
+        });
+        // 精确匹配优先
+        var exact = countryDocs.filter(function(c) { return c.name === name; });
+        if (exact.length) found = exact[0];
+        if (!found) return;
+
+        // 飞向并弹出
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(found.lon, found.lat, MIN_HEIGHT),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
+          duration: 1.5,
+          complete: function () {
+            popFlag.textContent = found.flag;
+            popName.textContent = found.name;
+            var itemsHtml = '';
+            found.docs.forEach(function(d) {
+              itemsHtml += '<div class="doc-item">';
+              itemsHtml += '<div class="doc-title-row"><span class="doc-title">' + d.title + '</span><span class="doc-rating">⭐ ' + d.rating + '</span></div>';
+              itemsHtml += '<div class="doc-wonders">' + d.wonders + '</div>';
+              d.pf.forEach(function(p) { itemsHtml += '<span class="platform-tag">' + p + '</span>'; });
+              itemsHtml += '</div>';
+            });
+            popContent.innerHTML = itemsHtml;
+            popup.classList.add('visible');
+            markerHint.style.opacity = '0';
+          }
+        });
+      }
+
+      console.log('Level6 | 北京 2000-3000km | 4096瓦片 | 纪录片标记点 | 点击弹出');
     })();
   </script>
 </body>
