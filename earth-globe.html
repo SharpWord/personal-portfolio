@@ -39,132 +39,60 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ===== 浮动纪录片卡片 —— 跟踪地球表面标记点 ===== */
+    /* ===== 浮动卡片 ===== */
     #floatingCard {
       position: absolute; z-index: 50; pointer-events: none;
       opacity: 0; transform: translate(-50%, -100%) scale(0.85);
       transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1);
-      /* 由 JS postRender 实时更新 left/top */
     }
     #floatingCard.active { opacity: 1; transform: translate(-50%, -100%) scale(1); pointer-events: auto; }
 
     .card-inner {
-      width: 340px;
-      background: rgba(10,18,30,0.92); backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.14); border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 60px rgba(60,140,240,0.08);
+      width: 300px;
+      background: rgba(15,20,35,0.85); border-radius: 14px; overflow: hidden;
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
     }
-
-    /* 卡片尖角指向地球 */
     .card-inner::after {
-      content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      content: ''; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
       width: 0; height: 0;
-      border-left: 8px solid transparent; border-right: 8px solid transparent;
-      border-top: 8px solid rgba(10,18,30,0.92);
+      border-left: 7px solid transparent; border-right: 7px solid transparent;
+      border-top: 7px solid rgba(15,20,35,0.85);
+    }
+    .card-body { padding: 18px 20px 14px; }
+    .card-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .card-flag { font-size: 24px; line-height: 1; }
+    .card-name { font-size: 17px; font-weight: 700; color: #fff; }
+    .card-rating {
+      margin-left: auto; font-size: 13px; font-weight: 700; color: #f5b642;
+      background: rgba(245,182,66,0.1); border-radius: 6px; padding: 2px 8px;
+    }
+    .card-title { font-size: 15px; font-weight: 700; color: #e0e5ee; margin-bottom: 8px; }
+    .card-wonders { font-size: 12.5px; color: #99aabb; line-height: 1.6; margin-bottom: 10px; }
+    .card-platforms { display: flex; gap: 6px; flex-wrap: wrap; }
+    .card-platforms span {
+      font-size: 11px; padding: 3px 10px; border-radius: 5px;
+      background: rgba(100,170,120,0.12); color: #8c8;
     }
 
-    /* 卡片头部 */
-    .card-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 12px;
-    }
-    .card-flag { font-size: 28px; line-height: 1; }
-    .card-name { font-size: 18px; font-weight: 700; color: #fff; margin-left: 10px; }
-    .card-close {
-      background: none; border: none; color: #667; font-size: 18px;
-      cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1;
-      transition: all 0.2s; margin-left: auto;
-    }
-    .card-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
-    /* ===== 10秒推荐预览区 ===== */
-    .preview-stage {
-      position: relative; height: 160px; overflow: hidden;
-      background: linear-gradient(135deg, #0d1a2d 0%, #152238 50%, #0a1628 100%);
-    }
-    .preview-slide {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; text-align: center;
-      padding: 20px 24px;
-      opacity: 0; transform: translateY(16px) scale(0.96);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-    .preview-slide.current {
-      opacity: 1; transform: translateY(0) scale(1);
-    }
-    .preview-slide .slide-icon { font-size: 32px; margin-bottom: 6px; }
-    .preview-slide .slide-title { font-size: 15px; font-weight: 700; color: #eee; margin-bottom: 6px; }
-    .preview-slide .slide-wonder { font-size: 13px; color: #9ab; line-height: 1.5; max-width: 280px; }
-    .preview-slide .slide-rating {
-      margin-top: 8px; font-size: 11px; font-weight: 700; color: #f0b90b;
-      background: rgba(240,185,11,0.1); border-radius: 4px; padding: 2px 8px;
-    }
-
-    /* 10秒倒计时进度条 */
-    .preview-bar-wrap {
-      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-      background: rgba(255,255,255,0.08);
-    }
-    .preview-bar-fill {
-      height: 100%; background: linear-gradient(90deg, #4488cc, #66aadd);
-      width: 100%; transition: width 0.1s linear;
-    }
-    .preview-timer {
-      position: absolute; top: 8px; right: 12px;
-      font-size: 11px; color: #667; font-weight: 600;
-    }
-
-    /* ===== 完整纪录片列表（预览结束后显示） ===== */
-    .docs-list {
-      padding: 12px 20px 16px; max-height: 260px; overflow-y: auto;
-      display: none;
-    }
-    .docs-list.shown { display: block; }
-    .docs-list .doc-row {
-      padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);
-      display: flex; flex-direction: column; gap: 3px;
-    }
-    .docs-list .doc-row:first-child { padding-top: 0; border-top: none; }
-    .docs-list .doc-title-row { display: flex; align-items: baseline; gap: 8px; }
-    .docs-list .doc-t { font-size: 14px; font-weight: 600; color: #ddd; }
-    .docs-list .doc-r {
-      font-size: 10px; font-weight: 700; color: #f0b90b;
-      background: rgba(240,185,11,0.1); border-radius: 3px; padding: 1px 5px;
-    }
-    .docs-list .doc-w { font-size: 12px; color: #889; line-height: 1.45; }
-    .docs-list .doc-pf { display: flex; gap: 4px; flex-wrap: wrap; }
-    .docs-list .doc-pf span {
-      font-size: 10px; padding: 1px 6px; border-radius: 3px;
-      background: rgba(100,180,120,0.12); color: #8c8;
-    }
-    .docs-list::-webkit-scrollbar { width: 3px; }
-    .docs-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-    /* ===== 状态栏 & 帮助 ===== */
+    /* ===== 帮助面板 ===== */
     #helpPanel {
       position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10;
-      background: rgba(0,0,0,0.55); backdrop-filter: blur(10px); border-radius: 12px;
-      padding: 12px 24px; color: #fff; font-size: 13px; display: flex; gap: 20px;
-      pointer-events: none; user-select: none; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-radius: 10px;
+      padding: 10px 20px; color: rgba(255,255,255,0.5); font-size: 11px; display: flex; gap: 16px;
+      pointer-events: none; user-select: none; border: 1px solid rgba(255,255,255,0.05);
     }
-    #helpPanel span { display: flex; align-items: center; gap: 8px; opacity: 0.85; }
+    #helpPanel span { display: flex; align-items: center; gap: 6px; }
     #helpPanel .key {
-      display: inline-block; background: rgba(255,255,255,0.2);
-      border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 600;
-    }
-    #statusBar {
-      position: absolute; top: 16px; right: 16px; z-index: 10;
-      background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border-radius: 8px;
-      padding: 8px 14px; color: #fff; font-size: 12px;
-      border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
+      display: inline-block; background: rgba(255,255,255,0.1);
+      border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 600;
     }
     #markerHint {
-      position: absolute; top: 60px; left: 16px; z-index: 10;
-      background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); border-radius: 8px;
-      padding: 8px 14px; color: #8899aa; font-size: 11px;
-      border: 1px solid rgba(255,255,255,0.08); pointer-events: none;
+      position: absolute; top: 50px; left: 16px; z-index: 10;
+      background: rgba(0,0,0,0.3); backdrop-filter: blur(6px); border-radius: 8px;
+      padding: 6px 12px; color: rgba(255,255,255,0.45); font-size: 10px;
+      border: 1px solid rgba(255,255,255,0.05); pointer-events: none;
       transition: opacity 0.5s;
     }
   </style>
@@ -179,7 +107,6 @@
     <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
   </div>
 
-  <div id="statusBar">高度: -- | Lv.6</div>
   <div id="markerHint">每颗亮点 = 一个国家 · 点击查看纪录片</div>
   <div id="helpPanel">
     <span><span class="key">滚轮</span> 缩放</span>
@@ -187,20 +114,19 @@
     <span><span class="key">R</span> 重置</span>
   </div>
 
-  <!-- 浮动卡片：跟踪地球表面标记点 -->
+  <!-- 浮动卡片 -->
   <div id="floatingCard">
     <div class="card-inner">
-      <div class="card-head">
-        <div><span class="card-flag" id="cfFlag"></span><span class="card-name" id="cfName"></span></div>
-        <button class="card-close" id="cfClose">✕</button>
+      <div class="card-body">
+        <div class="card-row1">
+          <span class="card-flag" id="cfFlag"></span>
+          <span class="card-name" id="cfName"></span>
+          <span class="card-rating" id="cfRating"></span>
+        </div>
+        <div class="card-title" id="cfTitle"></div>
+        <div class="card-wonders" id="cfWonders"></div>
+        <div class="card-platforms" id="cfPlatforms"></div>
       </div>
-      <!-- 10秒预览区 -->
-      <div class="preview-stage" id="previewStage">
-        <span class="preview-timer" id="previewTimer">10s</span>
-        <div class="preview-bar-wrap"><div class="preview-bar-fill" id="previewBarFill"></div></div>
-      </div>
-      <!-- 完整纪录片列表 -->
-      <div class="docs-list" id="docsList"></div>
     </div>
   </div>
 
@@ -368,15 +294,8 @@
       });
 
       // ================================================================
-      //  状态栏
+      //  状态栏（已移除）
       // ================================================================
-      var statusBar = document.getElementById('statusBar');
-      scene.preRender.addEventListener(function () {
-        var h = viewer.camera.positionCartographic.height;
-        var km = (h / 1000).toFixed(0);
-        statusBar.textContent = (urlCountry ? urlCountry + ' | ' : '') + '高度: ' + km + '公里 | Lv.6 | ' +
-          (h <= MIN_HEIGHT + 100 ? '最近' : h >= MAX_HEIGHT - 100 ? '最远' : '');
-      });
 
       // ================================================================
       //  快捷键
@@ -555,12 +474,13 @@
           },
           label: {
             text: c.name,
-            font: 'bold 15px "PingFang SC","Inter","Helvetica Neue",sans-serif',
+            font: 'bold 18px "PingFang SC","Inter","Helvetica Neue",sans-serif',
             fillColor: Cesium.Color.fromCssColorString('#ffffff'),
             outlineColor: Cesium.Color.fromCssColorString('#000000'),
-            outlineWidth: 3,
+            outlineWidth: 4,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cesium.Cartesian2(0, -32),
+            scaleByDistance: new Cesium.NearFarScalar(2000000, 1.0, 50000000, 0.6),
+            pixelOffset: new Cesium.Cartesian2(0, -36),
             verticalOrigin: Cesium.VerticalOrigin.TOP,
             horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
             distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 50000000),
@@ -575,132 +495,61 @@
       var fCard = document.getElementById('floatingCard');
       var cfFlag = document.getElementById('cfFlag');
       var cfName = document.getElementById('cfName');
-      var cfClose = document.getElementById('cfClose');
-      var previewStage = document.getElementById('previewStage');
-      var previewTimer = document.getElementById('previewTimer');
-      var previewBarFill = document.getElementById('previewBarFill');
-      var docsList = document.getElementById('docsList');
+      var cfRating = document.getElementById('cfRating');
+      var cfTitle = document.getElementById('cfTitle');
+      var cfWonders = document.getElementById('cfWonders');
+      var cfPlatforms = document.getElementById('cfPlatforms');
       var markerHint = document.getElementById('markerHint');
 
-      var activeCountry = null;     // 当前选中的国家数据
-      var activeEntity = null;      // 当前选中的 entity
-      var previewInterval = null;   // 预览轮播定时器
-      var previewCountdown = null;  // 倒计时定时器
-      var previewSlideIdx = 0;
+      var activeCountry = null;
+      var activeEntity = null;
 
       // ================================================================
-      //  显示卡片 + 启动 10 秒预览
+      //  显示卡片（只展示该国第一部纪录片）
       // ================================================================
       function showCard(country, entity) {
-        // 停掉之前的定时器
-        clearPreviews();
-
         activeCountry = country;
         activeEntity = entity;
 
+        var doc = country.docs[0];
+
         cfFlag.textContent = country.flag;
         cfName.textContent = country.name;
+        cfRating.textContent = '⭐ ' + doc.rating;
+        cfTitle.textContent = doc.title;
+        cfWonders.textContent = doc.wonders;
 
-        // 重置预览区
-        previewStage.querySelectorAll('.preview-slide').forEach(function(s) { s.remove(); });
-        docsList.classList.remove('shown');
-        docsList.innerHTML = '';
+        var pfHtml = '';
+        doc.pf.forEach(function(p) { pfHtml += '<span>' + p + '</span>'; });
+        cfPlatforms.innerHTML = pfHtml;
 
-        // 构建预览幻灯片：每部纪录片一个 slide
-        country.docs.forEach(function(d, i) {
-          var slide = document.createElement('div');
-          slide.className = 'preview-slide';
-          if (i === 0) slide.classList.add('current');
-          slide.innerHTML =
-            '<div class="slide-icon">' + d.wonders.split('、')[0].slice(0,2) + '</div>' +
-            '<div class="slide-title">' + d.title + '</div>' +
-            '<div class="slide-wonder">' + d.wonders + '</div>' +
-            '<div class="slide-rating">⭐ ' + d.rating + '</div>';
-          previewStage.appendChild(slide);
-        });
-
-        previewSlideIdx = 0;
         fCard.classList.add('active');
         markerHint.style.opacity = '0';
-
-        // 10 秒倒计时
-        var totalSlides = country.docs.length;
-        var slideDuration = totalSlides > 1 ? 10000 / totalSlides : 10000; // 每 slide 平均时间
-        var elapsed = 0;
-        var startTime = Date.now();
-
-        function advanceSlide() {
-          var slides = previewStage.querySelectorAll('.preview-slide');
-          if (slides.length === 0) return;
-          slides[previewSlideIdx].classList.remove('current');
-          previewSlideIdx = (previewSlideIdx + 1) % slides.length;
-          slides[previewSlideIdx].classList.add('current');
-        }
-
-        if (totalSlides > 1) {
-          previewInterval = setInterval(advanceSlide, slideDuration);
-        }
-
-        previewCountdown = setInterval(function () {
-          elapsed = Date.now() - startTime;
-          var remain = Math.max(0, 10000 - elapsed);
-          var pct = remain / 10000 * 100;
-          previewBarFill.style.width = pct + '%';
-          previewTimer.textContent = Math.ceil(remain / 1000) + 's';
-
-          if (elapsed >= 10000) {
-            clearPreviews();
-            previewBarFill.style.width = '0%';
-            previewTimer.textContent = '';
-            // 预览结束 → 显示完整纪录片列表
-            showDocsList(country);
-          }
-        }, 100);
-      }
-
-      function clearPreviews() {
-        if (previewInterval) { clearInterval(previewInterval); previewInterval = null; }
-        if (previewCountdown) { clearInterval(previewCountdown); previewCountdown = null; }
-      }
-
-      function showDocsList(country) {
-        var html = '';
-        country.docs.forEach(function(d) {
-          html += '<div class="doc-row">';
-          html += '<div class="doc-title-row"><span class="doc-t">' + d.title + '</span><span class="doc-r">⭐ ' + d.rating + '</span></div>';
-          html += '<div class="doc-w">' + d.wonders + '</div>';
-          html += '<div class="doc-pf">';
-          d.pf.forEach(function(p) { html += '<span>' + p + '</span>'; });
-          html += '</div></div>';
-        });
-        docsList.innerHTML = html;
-        docsList.classList.add('shown');
       }
 
       function hideCard() {
-        clearPreviews();
         activeCountry = null;
         activeEntity = null;
         fCard.classList.remove('active');
         markerHint.style.opacity = '1';
       }
 
-      cfClose.addEventListener('click', hideCard);
+      // 点击卡片以外区域关闭
+      document.addEventListener('click', function(e) {
+        if (!fCard.contains(e.target)) hideCard();
+      });
 
       // ================================================================
-      //  每帧：将浮动卡片跟踪到地球表面标记点坐标
+      //  每帧：卡片跟踪标记点屏幕坐标
       // ================================================================
       scene.postRender.addEventListener(function () {
         if (!activeCountry || !activeEntity) return;
         var pos3d = activeEntity.position.getValue(viewer.clock.currentTime);
         if (!pos3d) return;
         var screenPos = Cesium.SceneTransforms.wgs84ToWindowCoordinates(scene, pos3d);
-        if (!screenPos) {
-          fCard.classList.remove('active');
-          return;
-        }
+        if (!screenPos) { fCard.classList.remove('active'); return; }
         fCard.style.left = screenPos.x + 'px';
-        fCard.style.top = (screenPos.y - 40) + 'px'; // 偏移到标记点上方
+        fCard.style.top = (screenPos.y - 40) + 'px';
       });
 
       // ================================================================
@@ -743,7 +592,6 @@
         var exact = countryDocs.filter(function(c) { return c.name === name; });
         if (exact.length) found = exact[0];
         if (!found) return;
-        // 找到对应 entity
         var targetEntity = null;
         viewer.entities.values.forEach(function(e) {
           if (e._countryData === found) targetEntity = e;
@@ -752,9 +600,7 @@
           destination: Cesium.Cartesian3.fromDegrees(found.lon, found.lat, MIN_HEIGHT),
           orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
           duration: 1.5,
-          complete: function () {
-            showCard(found, targetEntity);
-          }
+          complete: function () { showCard(found, targetEntity); }
         });
       }
 
@@ -763,7 +609,7 @@
       // ================================================================
       setTimeout(startReveal, 1500);
 
-      console.log('Level6 | 北京 2000-3000km | 浮动卡片+10秒预览 | 国旗Canvas高清');
+      console.log('Level6 | 北京 2000-3000km | 单纪录片卡片 | 18px国旗标签');
     })();
   </script>
 </body>
