@@ -24,6 +24,13 @@
       "desc": "897 行手写代码，零构建工具。打开浏览器就能写的极简写作工具。",
       "category": "Web全栈",
       "demoLink": "markdown-editor.html"
+    },
+    {
+      "name": "3D 地球可视化",
+      "tech": ["CesiumJS", "WebGL", "ESRI影像"],
+      "desc": "2000-3000km 太空视角，4096 张高清卫星瓦片，渐进式从模糊到清晰的加载动画。",
+      "category": "AIGC",
+      "demoLink": "earth-globe.html"
     }
   ]
 }
