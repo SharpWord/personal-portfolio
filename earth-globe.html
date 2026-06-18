@@ -534,8 +534,12 @@
         markerHint.style.opacity = '1';
       }
 
-      // 点击卡片以外区域关闭
+      // ================================================================
+      //  点击卡片以外区域关闭（避开 Cesium 画布点击）
+      // ================================================================
+      var cardLocked = false;
       document.addEventListener('click', function(e) {
+        if (cardLocked) { cardLocked = false; return; }
         if (!fCard.contains(e.target)) hideCard();
       });
 
@@ -560,6 +564,7 @@
         var picked = viewer.scene.pick(click.position);
         if (picked && picked.id && picked.id._countryData) {
           var c = picked.id._countryData;
+          cardLocked = true; // 阻止 document click 关闭卡片
           viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(c.lon, c.lat, MIN_HEIGHT),
             orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
