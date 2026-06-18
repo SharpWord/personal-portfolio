@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>高清3D地球</title>
+  <title>高清3D地球 · 自然纪录片索引</title>
 
   <script>
     window.CESIUM_BASE_URL = 'https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium/';
@@ -16,23 +16,19 @@
     html, body, #cesiumContainer { width: 100%; height: 100%; overflow: hidden; background: #000; }
     .cesium-viewer-bottom { display: none !important; }
 
-    /* 加载过场：纯黑遮罩 */
+    /* ===== 加载过场 ===== */
     #loadingOverlay {
       position: fixed; inset: 0; z-index: 200;
       background: #000; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      transition: opacity 1s ease;
-      pointer-events: all;
+      transition: opacity 1s ease; pointer-events: all;
     }
     #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
     #loadingOverlay .spinner {
       width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.2);
-      border-top-color: #fff; border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
     }
-    #loadingOverlay .text {
-      color: #fff; font-size: 14px; margin-top: 16px; opacity: 0.8;
-    }
+    #loadingOverlay .text { color: #fff; font-size: 14px; margin-top: 16px; opacity: 0.8; }
     #loadingOverlay .progress {
       width: 200px; height: 3px; background: rgba(255,255,255,0.15);
       border-radius: 3px; margin-top: 14px; overflow: hidden;
@@ -43,65 +39,127 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ===== 浮动纪录片卡片 —— 跟踪地球表面标记点 ===== */
+    #floatingCard {
+      position: absolute; z-index: 50; pointer-events: none;
+      opacity: 0; transform: translate(-50%, -100%) scale(0.85);
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1);
+      /* 由 JS postRender 实时更新 left/top */
+    }
+    #floatingCard.active { opacity: 1; transform: translate(-50%, -100%) scale(1); pointer-events: auto; }
+
+    .card-inner {
+      width: 340px;
+      background: rgba(10,18,30,0.92); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.14); border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 60px rgba(60,140,240,0.08);
+    }
+
+    /* 卡片尖角指向地球 */
+    .card-inner::after {
+      content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 8px solid transparent; border-right: 8px solid transparent;
+      border-top: 8px solid rgba(10,18,30,0.92);
+    }
+
+    /* 卡片头部 */
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px;
+    }
+    .card-flag { font-size: 28px; line-height: 1; }
+    .card-name { font-size: 18px; font-weight: 700; color: #fff; margin-left: 10px; }
+    .card-close {
+      background: none; border: none; color: #667; font-size: 18px;
+      cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1;
+      transition: all 0.2s; margin-left: auto;
+    }
+    .card-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* ===== 10秒推荐预览区 ===== */
+    .preview-stage {
+      position: relative; height: 160px; overflow: hidden;
+      background: linear-gradient(135deg, #0d1a2d 0%, #152238 50%, #0a1628 100%);
+    }
+    .preview-slide {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 20px 24px;
+      opacity: 0; transform: translateY(16px) scale(0.96);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .preview-slide.current {
+      opacity: 1; transform: translateY(0) scale(1);
+    }
+    .preview-slide .slide-icon { font-size: 32px; margin-bottom: 6px; }
+    .preview-slide .slide-title { font-size: 15px; font-weight: 700; color: #eee; margin-bottom: 6px; }
+    .preview-slide .slide-wonder { font-size: 13px; color: #9ab; line-height: 1.5; max-width: 280px; }
+    .preview-slide .slide-rating {
+      margin-top: 8px; font-size: 11px; font-weight: 700; color: #f0b90b;
+      background: rgba(240,185,11,0.1); border-radius: 4px; padding: 2px 8px;
+    }
+
+    /* 10秒倒计时进度条 */
+    .preview-bar-wrap {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: rgba(255,255,255,0.08);
+    }
+    .preview-bar-fill {
+      height: 100%; background: linear-gradient(90deg, #4488cc, #66aadd);
+      width: 100%; transition: width 0.1s linear;
+    }
+    .preview-timer {
+      position: absolute; top: 8px; right: 12px;
+      font-size: 11px; color: #667; font-weight: 600;
+    }
+
+    /* ===== 完整纪录片列表（预览结束后显示） ===== */
+    .docs-list {
+      padding: 12px 20px 16px; max-height: 260px; overflow-y: auto;
+      display: none;
+    }
+    .docs-list.shown { display: block; }
+    .docs-list .doc-row {
+      padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .docs-list .doc-row:first-child { padding-top: 0; border-top: none; }
+    .docs-list .doc-title-row { display: flex; align-items: baseline; gap: 8px; }
+    .docs-list .doc-t { font-size: 14px; font-weight: 600; color: #ddd; }
+    .docs-list .doc-r {
+      font-size: 10px; font-weight: 700; color: #f0b90b;
+      background: rgba(240,185,11,0.1); border-radius: 3px; padding: 1px 5px;
+    }
+    .docs-list .doc-w { font-size: 12px; color: #889; line-height: 1.45; }
+    .docs-list .doc-pf { display: flex; gap: 4px; flex-wrap: wrap; }
+    .docs-list .doc-pf span {
+      font-size: 10px; padding: 1px 6px; border-radius: 3px;
+      background: rgba(100,180,120,0.12); color: #8c8;
+    }
+    .docs-list::-webkit-scrollbar { width: 3px; }
+    .docs-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ===== 状态栏 & 帮助 ===== */
     #helpPanel {
       position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10;
-      background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(10px); border-radius: 12px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(10px); border-radius: 12px;
       padding: 12px 24px; color: #fff; font-size: 13px; display: flex; gap: 20px;
-      pointer-events: none; user-select: none; border: 1px solid rgba(255, 255, 255, 0.1);
+      pointer-events: none; user-select: none; border: 1px solid rgba(255,255,255,0.1);
     }
     #helpPanel span { display: flex; align-items: center; gap: 8px; opacity: 0.85; }
     #helpPanel .key {
-      display: inline-block; background: rgba(255, 255, 255, 0.2);
+      display: inline-block; background: rgba(255,255,255,0.2);
       border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 600;
     }
-
     #statusBar {
       position: absolute; top: 16px; right: 16px; z-index: 10;
-      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); border-radius: 8px;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border-radius: 8px;
       padding: 8px 14px; color: #fff; font-size: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
     }
-
-    /* ===== 纪录片弹出卡片 ===== */
-    #docPopup {
-      position: absolute; bottom: -520px; left: 50%; transform: translateX(-50%); z-index: 50;
-      width: min(620px, 92vw); max-height: 480px; overflow-y: auto;
-      background: rgba(10, 18, 30, 0.94); backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px;
-      padding: 24px 28px 20px; color: #e4e6ea;
-      transition: bottom 0.45s cubic-bezier(0.25, 1, 0.5, 1);
-      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
-    }
-    #docPopup.visible { bottom: 28px; }
-    #docPopup .pop-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    #docPopup .pop-flag   { font-size: 26px; }
-    #docPopup .pop-name   { font-size: 18px; font-weight: 700; color: #fff; margin-left: 8px; }
-    #docPopup .pop-close  {
-      background: none; border: none; color: #8899aa; font-size: 20px;
-      cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1;
-      transition: background 0.2s;
-    }
-    #docPopup .pop-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    #docPopup .doc-item {
-      padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    #docPopup .doc-item:first-of-type { padding-top: 0; border-top: none; }
-    #docPopup .doc-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
-    #docPopup .doc-title  { font-size: 14px; font-weight: 600; color: #ddd; }
-    #docPopup .doc-rating {
-      font-size: 11px; font-weight: 700; color: #f0b90b;
-      background: rgba(240,185,11,0.12); border-radius: 4px; padding: 1px 6px;
-    }
-    #docPopup .doc-wonders { font-size: 12px; color: #889; line-height: 1.5; margin-bottom: 4px; }
-    #docPopup .platform-tag {
-      display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 3px;
-      background: rgba(100,180,120,0.12); color: #8c8; margin-right: 4px;
-    }
-    #docPopup .pop-empty { text-align: center; color: #556; font-size: 13px; padding: 12px 0; }
-    #docPopup::-webkit-scrollbar { width: 4px; }
-    #docPopup::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-    /* ===== 标记点图例 ===== */
     #markerHint {
       position: absolute; top: 60px; left: 16px; z-index: 10;
       background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); border-radius: 8px;
@@ -114,7 +172,7 @@
 <body>
   <div id="cesiumContainer"></div>
 
-  <!-- 加载过场遮罩 -->
+  <!-- 加载遮罩 -->
   <div id="loadingOverlay">
     <div class="spinner"></div>
     <div class="text">正在加载地球...</div>
@@ -129,13 +187,21 @@
     <span><span class="key">R</span> 重置</span>
   </div>
 
-  <!-- 纪录片弹出卡片 -->
-  <div id="docPopup">
-    <div class="pop-header">
-      <div><span class="pop-flag" id="popFlag"></span><span class="pop-name" id="popName"></span></div>
-      <button class="pop-close" onclick="document.getElementById('docPopup').classList.remove('visible')">✕</button>
+  <!-- 浮动卡片：跟踪地球表面标记点 -->
+  <div id="floatingCard">
+    <div class="card-inner">
+      <div class="card-head">
+        <div><span class="card-flag" id="cfFlag"></span><span class="card-name" id="cfName"></span></div>
+        <button class="card-close" id="cfClose">✕</button>
+      </div>
+      <!-- 10秒预览区 -->
+      <div class="preview-stage" id="previewStage">
+        <span class="preview-timer" id="previewTimer">10s</span>
+        <div class="preview-bar-wrap"><div class="preview-bar-fill" id="previewBarFill"></div></div>
+      </div>
+      <!-- 完整纪录片列表 -->
+      <div class="docs-list" id="docsList"></div>
     </div>
-    <div id="popContent"></div>
   </div>
 
   <script>
@@ -159,7 +225,6 @@
       var CENTER_LON = 116.4;
       var CENTER_LAT = 39.9;
 
-      // 读取 URL 参数：?country=中国&lon=116.4&lat=39.9
       var params = new URLSearchParams(window.location.search);
       var urlCountry = params.get('country') || '';
       var urlLon = parseFloat(params.get('lon')) || CENTER_LON;
@@ -171,19 +236,13 @@
       scene.screenSpaceCameraController.enableZoom = true;
 
       // ================================================================
-      //  清晰度：Level 6（比上一版 level 5 高一档）
-      //
-      //  Level 6 瓦片数：64×64 = 4096 张（全球）
-      //  2000km 时可见 ~60 张，分辨率约 150m/像素
-      //  加载策略：先模糊后清晰，渐进式呈现
+      //  清晰度
       // ================================================================
-      globe.maximumScreenSpaceError = 16;       // 启动时最大模糊（只加载极少数瓦片）
-      globe.tileCacheSize = 6000;               // 足够装下全部 4096 张
+      globe.maximumScreenSpaceError = 16;
+      globe.tileCacheSize = 6000;
 
       // ================================================================
       //  渐进式清晰度动画
-      //  从模糊(maxError=16) → 清晰(maxError=2.0)
-      //  分 6 步，每步间隔 400ms，总耗时 ~2.4 秒
       // ================================================================
       var qualitySteps = [16, 10, 6, 4, 2.8, 2.0];
       var qualityTimer = null;
@@ -196,12 +255,10 @@
       function startReveal() {
         if (started) return;
         started = true;
-
         function nextStep() {
           if (qualityStepIndex >= qualitySteps.length) {
             progressBar.style.width = '100%';
             progressText.textContent = '正在预载球背...';
-            // 清晰度完成后，开始后台预加载全部 level 6 瓦片
             startBackgroundPreload();
             return;
           }
@@ -210,30 +267,17 @@
           qualityStepIndex++;
           qualityTimer = setTimeout(nextStep, 400);
         }
-
         nextStep();
       }
 
       // ================================================================
-      //  后台预加载：用原生 Image() 加载全部 level 6 瓦片
-      //
-      //  原理：完全绕开 Cesium 的 RequestScheduler，用浏览器原生
-      //  Image() 分批加载全部 4096 张 level 6 瓦片。
-      //
-      //  每批 128 张，等待该批全部 settle（完成或失败），再发下一批。
-      //  浏览器自动限制同源 TCP 连接数（6-8 个），所以不会炸。
-      //
-      //  4096 张 / 128 批 = 32 批
-      //  每批约 2-4 秒（取决于 ESRI 速度）→ 总耗时 ~1-2 分钟
-      //  但用户不需要等完——第一批（正面瓦片）最先加载，
-      //  球背面的瓦片在后台静默完成
+      //  后台预加载全部 level 6 瓦片
       // ================================================================
       var preloadTotal = 0;
       var preloadDone = 0;
 
       function startBackgroundPreload() {
-        // 生成 level 6 全部瓦片坐标（64×64=4096 张）
-        var size = 1 << 6;  // 2^6 = 64
+        var size = 1 << 6;
         var urls = [];
         for (var y = 0; y < size; y++) {
           for (var x = 0; x < size; x++) {
@@ -241,44 +285,30 @@
           }
         }
         preloadTotal = urls.length;
-
         var BATCH = 128;
         var index = 0;
-
         function loadBatch() {
           if (index >= preloadTotal) {
-            // 全部结束或超时，揭幕
             progressText.textContent = '加载完成';
             progressBar.style.width = '100%';
-            setTimeout(function () {
-              overlay.classList.add('hidden');
-            }, 400);
+            setTimeout(function () { overlay.classList.add('hidden'); }, 400);
             return;
           }
-
           var batchEnd = Math.min(index + BATCH, preloadTotal);
           var batchUrls = urls.slice(index, batchEnd);
           index = batchEnd;
-
           var pending = batchUrls.length;
-
           batchUrls.forEach(function (u) {
             var img = new Image();
             img.onload = img.onerror = function () {
               preloadDone++;
               pending--;
-              var pct = Math.round(preloadDone / preloadTotal * 100);
-              progressBar.style.width = pct + '%';
-
-              if (pending === 0) {
-                // 当前批全部 settle，发下一批
-                setTimeout(loadBatch, 50);
-              }
+              progressBar.style.width = Math.round(preloadDone / preloadTotal * 100) + '%';
+              if (pending === 0) setTimeout(loadBatch, 50);
             };
             img.src = u;
           });
         }
-
         loadBatch();
       }
 
@@ -290,12 +320,9 @@
         var h = position.height;
         if (h < MIN_HEIGHT || h > MAX_HEIGHT) {
           var clampedH = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, h));
-          var cart = Cesium.Cartesian3.fromDegrees(
+          viewer.camera.position = Cesium.Cartesian3.fromDegrees(
             Cesium.Math.toDegrees(position.longitude),
-            Cesium.Math.toDegrees(position.latitude),
-            clampedH
-          );
-          viewer.camera.position = cart;
+            Cesium.Math.toDegrees(position.latitude), clampedH);
         }
       });
 
@@ -313,16 +340,13 @@
           negativeZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'),
         },
       });
-
       globe.enableLighting = true;
       globe.lambertDiffuseMultiplier = 0.75;
       globe.baseColor = Cesium.Color.fromCssColorString('#0a1628');
       globe.showGroundAtmosphere = true;
 
       // ================================================================
-      //  影像 —— min=1, max=6
-      //  预加载时 Cesium 先显示 level 1-3（瞬时），再渐进升到 level 6
-      //  避免 minLevel=6 时瞬间数百瓦片同时请求导致 abort
+      //  影像
       // ================================================================
       viewer.imageryLayers.addImageryProvider(
         new Cesium.UrlTemplateImageryProvider({
@@ -335,7 +359,6 @@
 
       // ================================================================
       //  初始视角
-      //  有 ?country=XX 参数时飞向该国，否则北京 2000 公里
       // ================================================================
       var initLon = hasTarget ? urlLon : CENTER_LON;
       var initLat = hasTarget ? urlLat : CENTER_LAT;
@@ -347,7 +370,6 @@
       // ================================================================
       //  状态栏
       // ================================================================
-      var statusLabel = urlCountry || '高度';
       var statusBar = document.getElementById('statusBar');
       scene.preRender.addEventListener(function () {
         var h = viewer.camera.positionCartographic.height;
@@ -355,12 +377,6 @@
         statusBar.textContent = (urlCountry ? urlCountry + ' | ' : '') + '高度: ' + km + '公里 | Lv.6 | ' +
           (h <= MIN_HEIGHT + 100 ? '最近' : h >= MAX_HEIGHT - 100 ? '最远' : '');
       });
-
-      // ================================================================
-      //  启动加载流程
-      //  先用 16 的模糊值快速出图（1-2秒），然后渐进清晰
-      // ================================================================
-      setTimeout(startReveal, 1500);
 
       // ================================================================
       //  快捷键
@@ -380,7 +396,7 @@
       });
 
       // ================================================================
-      //  纪录片数据：国家 → 经纬度 → 纪录片列表
+      //  纪录片数据
       // ================================================================
       var countryDocs = [
         { name:'中国', flag:'🇨🇳', lon:116.4, lat:39.9, docs:[
@@ -492,110 +508,229 @@
       ];
 
       // ================================================================
-      //  创建标记点（Billboard 发光点 + Label 国家名）
+      //  创建标记点（发光点 + 国旗标签，16px 大字体清晰版）
       // ================================================================
-      var markerSize = 10; // 像素大小，2000km 高度可见
-
-      countryDocs.forEach(function(c) {
-        var entity = viewer.entities.add({
-          position: Cesium.Cartesian3.fromDegrees(c.lon, c.lat),
-          billboard: {
-            image: createMarkerImage(),
-            width: markerSize,
-            height: markerSize,
-            verticalOrigin: Cesium.VerticalOrigin.CENTER,
-            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-          },
-          label: {
-            text: c.flag + ' ' + c.name,
-            font: '12px "PingFang SC","Inter",sans-serif',
-            fillColor: Cesium.Color.fromCssColorString('#ffffff'),
-            outlineColor: Cesium.Color.fromCssColorString('#000000'),
-            outlineWidth: 2,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cesium.Cartesian2(0, -16),
-            verticalOrigin: Cesium.VerticalOrigin.TOP,
-            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 40000000),
-          },
-          _countryData: c,
-        });
-      });
-
-      // Canvas 生成发光圆点纹理
       function createMarkerImage() {
-        var size = 32;
+        var size = 48;
         var canvas = document.createElement('canvas');
         canvas.width = size; canvas.height = size;
         var ctx = canvas.getContext('2d');
         var half = size / 2;
         var grad = ctx.createRadialGradient(half, half, 0, half, half, half);
         grad.addColorStop(0, 'rgba(255,255,255,1)');
-        grad.addColorStop(0.15, 'rgba(100,180,255,0.9)');
-        grad.addColorStop(0.4, 'rgba(60,120,220,0.5)');
-        grad.addColorStop(1, 'rgba(60,120,220,0)');
+        grad.addColorStop(0.12, 'rgba(120,200,255,0.95)');
+        grad.addColorStop(0.35, 'rgba(60,140,240,0.45)');
+        grad.addColorStop(1, 'rgba(30,80,180,0)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, size, size);
+        // 中心亮白点
+        ctx.beginPath(); ctx.arc(half, half, 3, 0, Math.PI*2);
+        ctx.fillStyle = '#fff'; ctx.fill();
         return canvas;
       }
 
+      // 国旗 Canvas 纹理（48px 高清渲染，Apple 表情包风格）
+      function createFlagCanvas(flag) {
+        var size = 64;
+        var canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        ctx.font = '42px "Apple Color Emoji","Noto Color Emoji","Segoe UI Emoji",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(flag, size/2, size/2);
+        return canvas;
+      }
+
+      countryDocs.forEach(function(c) {
+        var entity = viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(c.lon, c.lat),
+          billboard: {
+            image: createFlagCanvas(c.flag),
+            width: 18,
+            height: 18,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            pixelOffset: new Cesium.Cartesian2(0, -14),
+          },
+          label: {
+            text: c.name,
+            font: 'bold 15px "PingFang SC","Inter","Helvetica Neue",sans-serif',
+            fillColor: Cesium.Color.fromCssColorString('#ffffff'),
+            outlineColor: Cesium.Color.fromCssColorString('#000000'),
+            outlineWidth: 3,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cesium.Cartesian2(0, -32),
+            verticalOrigin: Cesium.VerticalOrigin.TOP,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 50000000),
+          },
+          _countryData: c,
+        });
+      });
+
       // ================================================================
-      //  点击标记 → 弹出纪录片卡片
+      //  浮动卡片元素
       // ================================================================
-      var popup = document.getElementById('docPopup');
-      var popFlag = document.getElementById('popFlag');
-      var popName = document.getElementById('popName');
-      var popContent = document.getElementById('popContent');
+      var fCard = document.getElementById('floatingCard');
+      var cfFlag = document.getElementById('cfFlag');
+      var cfName = document.getElementById('cfName');
+      var cfClose = document.getElementById('cfClose');
+      var previewStage = document.getElementById('previewStage');
+      var previewTimer = document.getElementById('previewTimer');
+      var previewBarFill = document.getElementById('previewBarFill');
+      var docsList = document.getElementById('docsList');
       var markerHint = document.getElementById('markerHint');
 
+      var activeCountry = null;     // 当前选中的国家数据
+      var activeEntity = null;      // 当前选中的 entity
+      var previewInterval = null;   // 预览轮播定时器
+      var previewCountdown = null;  // 倒计时定时器
+      var previewSlideIdx = 0;
+
+      // ================================================================
+      //  显示卡片 + 启动 10 秒预览
+      // ================================================================
+      function showCard(country, entity) {
+        // 停掉之前的定时器
+        clearPreviews();
+
+        activeCountry = country;
+        activeEntity = entity;
+
+        cfFlag.textContent = country.flag;
+        cfName.textContent = country.name;
+
+        // 重置预览区
+        previewStage.querySelectorAll('.preview-slide').forEach(function(s) { s.remove(); });
+        docsList.classList.remove('shown');
+        docsList.innerHTML = '';
+
+        // 构建预览幻灯片：每部纪录片一个 slide
+        country.docs.forEach(function(d, i) {
+          var slide = document.createElement('div');
+          slide.className = 'preview-slide';
+          if (i === 0) slide.classList.add('current');
+          slide.innerHTML =
+            '<div class="slide-icon">' + d.wonders.split('、')[0].slice(0,2) + '</div>' +
+            '<div class="slide-title">' + d.title + '</div>' +
+            '<div class="slide-wonder">' + d.wonders + '</div>' +
+            '<div class="slide-rating">⭐ ' + d.rating + '</div>';
+          previewStage.appendChild(slide);
+        });
+
+        previewSlideIdx = 0;
+        fCard.classList.add('active');
+        markerHint.style.opacity = '0';
+
+        // 10 秒倒计时
+        var totalSlides = country.docs.length;
+        var slideDuration = totalSlides > 1 ? 10000 / totalSlides : 10000; // 每 slide 平均时间
+        var elapsed = 0;
+        var startTime = Date.now();
+
+        function advanceSlide() {
+          var slides = previewStage.querySelectorAll('.preview-slide');
+          if (slides.length === 0) return;
+          slides[previewSlideIdx].classList.remove('current');
+          previewSlideIdx = (previewSlideIdx + 1) % slides.length;
+          slides[previewSlideIdx].classList.add('current');
+        }
+
+        if (totalSlides > 1) {
+          previewInterval = setInterval(advanceSlide, slideDuration);
+        }
+
+        previewCountdown = setInterval(function () {
+          elapsed = Date.now() - startTime;
+          var remain = Math.max(0, 10000 - elapsed);
+          var pct = remain / 10000 * 100;
+          previewBarFill.style.width = pct + '%';
+          previewTimer.textContent = Math.ceil(remain / 1000) + 's';
+
+          if (elapsed >= 10000) {
+            clearPreviews();
+            previewBarFill.style.width = '0%';
+            previewTimer.textContent = '';
+            // 预览结束 → 显示完整纪录片列表
+            showDocsList(country);
+          }
+        }, 100);
+      }
+
+      function clearPreviews() {
+        if (previewInterval) { clearInterval(previewInterval); previewInterval = null; }
+        if (previewCountdown) { clearInterval(previewCountdown); previewCountdown = null; }
+      }
+
+      function showDocsList(country) {
+        var html = '';
+        country.docs.forEach(function(d) {
+          html += '<div class="doc-row">';
+          html += '<div class="doc-title-row"><span class="doc-t">' + d.title + '</span><span class="doc-r">⭐ ' + d.rating + '</span></div>';
+          html += '<div class="doc-w">' + d.wonders + '</div>';
+          html += '<div class="doc-pf">';
+          d.pf.forEach(function(p) { html += '<span>' + p + '</span>'; });
+          html += '</div></div>';
+        });
+        docsList.innerHTML = html;
+        docsList.classList.add('shown');
+      }
+
+      function hideCard() {
+        clearPreviews();
+        activeCountry = null;
+        activeEntity = null;
+        fCard.classList.remove('active');
+        markerHint.style.opacity = '1';
+      }
+
+      cfClose.addEventListener('click', hideCard);
+
+      // ================================================================
+      //  每帧：将浮动卡片跟踪到地球表面标记点坐标
+      // ================================================================
+      scene.postRender.addEventListener(function () {
+        if (!activeCountry || !activeEntity) return;
+        var pos3d = activeEntity.position.getValue(viewer.clock.currentTime);
+        if (!pos3d) return;
+        var screenPos = Cesium.SceneTransforms.wgs84ToWindowCoordinates(scene, pos3d);
+        if (!screenPos) {
+          fCard.classList.remove('active');
+          return;
+        }
+        fCard.style.left = screenPos.x + 'px';
+        fCard.style.top = (screenPos.y - 40) + 'px'; // 偏移到标记点上方
+      });
+
+      // ================================================================
+      //  点击事件
+      // ================================================================
       var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
       handler.setInputAction(function (click) {
         var picked = viewer.scene.pick(click.position);
         if (picked && picked.id && picked.id._countryData) {
           var c = picked.id._countryData;
-
-          // 飞向该国
           viewer.camera.flyTo({
             destination: Cesium.Cartesian3.fromDegrees(c.lon, c.lat, MIN_HEIGHT),
             orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
             duration: 1.5,
           });
-
-          // 填充弹出卡片
-          popFlag.textContent = c.flag;
-          popName.textContent = c.name;
-          var itemsHtml = '';
-          c.docs.forEach(function(d) {
-            itemsHtml += '<div class="doc-item">';
-            itemsHtml += '<div class="doc-title-row"><span class="doc-title">' + d.title + '</span><span class="doc-rating">⭐ ' + d.rating + '</span></div>';
-            itemsHtml += '<div class="doc-wonders">' + d.wonders + '</div>';
-            d.pf.forEach(function(p) {
-              itemsHtml += '<span class="platform-tag">' + p + '</span>';
-            });
-            itemsHtml += '</div>';
-          });
-          popContent.innerHTML = itemsHtml;
-          popup.classList.add('visible');
-
-          // 隐藏标记点提示
-          markerHint.style.opacity = '0';
+          showCard(c, picked.id);
         } else {
-          // 点击空白区域关闭
-          popup.classList.remove('visible');
-          markerHint.style.opacity = '1';
+          hideCard();
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-      // 遮罩加载完毕后显示提示
+      // ================================================================
+      //  加载完成后：提示 + URL 跳转自动弹出
+      // ================================================================
       setTimeout(function () {
         var check = setInterval(function () {
           if (overlay.classList.contains('hidden')) {
             markerHint.style.opacity = '1';
             clearInterval(check);
-            // 如果从 nature-docs 跳转过来，自动弹出卡片
-            if (hasTarget && urlCountry) {
-              autoShowCountry(urlCountry);
-            }
+            if (hasTarget && urlCountry) autoShowCountry(urlCountry);
           }
         }, 500);
       }, 3000);
@@ -603,39 +738,32 @@
       function autoShowCountry(name) {
         var found = null;
         countryDocs.forEach(function(c) {
-          if (c.name.indexOf(name) !== -1 || name.indexOf(c.name) !== -1) {
-            found = c;
-          }
+          if (c.name.indexOf(name) !== -1 || name.indexOf(c.name) !== -1) found = c;
         });
-        // 精确匹配优先
         var exact = countryDocs.filter(function(c) { return c.name === name; });
         if (exact.length) found = exact[0];
         if (!found) return;
-
-        // 飞向并弹出
+        // 找到对应 entity
+        var targetEntity = null;
+        viewer.entities.values.forEach(function(e) {
+          if (e._countryData === found) targetEntity = e;
+        });
         viewer.camera.flyTo({
           destination: Cesium.Cartesian3.fromDegrees(found.lon, found.lat, MIN_HEIGHT),
           orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
           duration: 1.5,
           complete: function () {
-            popFlag.textContent = found.flag;
-            popName.textContent = found.name;
-            var itemsHtml = '';
-            found.docs.forEach(function(d) {
-              itemsHtml += '<div class="doc-item">';
-              itemsHtml += '<div class="doc-title-row"><span class="doc-title">' + d.title + '</span><span class="doc-rating">⭐ ' + d.rating + '</span></div>';
-              itemsHtml += '<div class="doc-wonders">' + d.wonders + '</div>';
-              d.pf.forEach(function(p) { itemsHtml += '<span class="platform-tag">' + p + '</span>'; });
-              itemsHtml += '</div>';
-            });
-            popContent.innerHTML = itemsHtml;
-            popup.classList.add('visible');
-            markerHint.style.opacity = '0';
+            showCard(found, targetEntity);
           }
         });
       }
 
-      console.log('Level6 | 北京 2000-3000km | 4096瓦片 | 纪录片标记点 | 点击弹出');
+      // ================================================================
+      //  启动
+      // ================================================================
+      setTimeout(startReveal, 1500);
+
+      console.log('Level6 | 北京 2000-3000km | 浮动卡片+10秒预览 | 国旗Canvas高清');
     })();
   </script>
 </body>
