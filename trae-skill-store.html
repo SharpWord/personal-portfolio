@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Trae Skill Store · 技能商店</title>
+  <meta name="description" content="Trae IDE 技能商店 — 浏览、下载、安装实用的 AI 编程技能">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    /* ===== 玻璃拟态全局背景 ===== */
+    body {
+      font-family: "PingFang SC", "Inter", -apple-system, "Helvetica Neue", sans-serif;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(180,150,100,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 20% 100%, rgba(200,160,100,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(160,140,180,0.06) 0%, transparent 50%),
+        #0d1117;
+      background-attachment: fixed;
+      color: #e0e4ec; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ===== 顶部玻璃导航 ===== */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: rgba(20,25,35,0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    }
+    .nav-logo {
+      font-size: 17px; font-weight: 700; color: #fff;
+      display: flex; align-items: center; gap: 8px; text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .nav-logo .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: linear-gradient(135deg, #d4a853, #f0d78c);
+      box-shadow: 0 0 10px rgba(212,168,83,0.5);
+    }
+    .nav-links { display: flex; gap: 20px; list-style: none; }
+    .nav-links a {
+      font-size: 12px; color: rgba(255,255,255,0.55); text-decoration: none; font-weight: 500;
+      transition: color 0.2s; letter-spacing: 0.02em;
+    }
+    .nav-links a:hover { color: rgba(255,255,255,0.85); }
+
+    /* ===== Hero 玻璃 ===== */
+    .hero {
+      text-align: center; padding: 64px 20px 40px;
+      position: relative;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(212,168,83,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-icon {
+      width: 56px; height: 56px; margin: 0 auto 16px; border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center; font-size: 26px;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 42px); font-weight: 800; color: #fff;
+      letter-spacing: -0.03em; margin-bottom: 8px;
+      background: linear-gradient(135deg, #f0d78c 0%, #d4a853 40%, #e4e0d0 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 13px; color: rgba(255,255,255,0.45); max-width: 400px; margin: 0 auto 24px;
+      line-height: 1.7;
+    }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 32px; font-size: 12px; color: rgba(255,255,255,0.35);
+    }
+    .hero-stats strong {
+      color: rgba(255,255,255,0.7); font-size: 20px; font-weight: 700; display: block; line-height: 1.3;
+    }
+
+    /* ===== 分类标签栏 ===== */
+    .tabs-bar {
+      display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+      padding: 0 20px 24px; max-width: 800px; margin: 0 auto;
+    }
+    .tab-btn {
+      padding: 7px 18px; border-radius: 20px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25,1,0.5,1); font-family: inherit;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      border-color: rgba(255,255,255,0.18); color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.06);
+    }
+    .tab-btn.active {
+      background: rgba(212,168,83,0.12);
+      border-color: rgba(212,168,83,0.3);
+      color: #e0c87c;
+      box-shadow: 0 0 12px rgba(212,168,83,0.08);
+    }
+
+    /* ===== 区段标题 ===== */
+    .section-label {
+      text-align: center; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.3);
+      padding: 0 20px 16px; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    /* ===== 瀑布流容器 ===== */
+    .waterfall {
+      columns: 4; column-gap: 16px; padding: 0 20px;
+      max-width: 1400px; margin: 0 auto;
+    }
+    @media (max-width: 1100px) { .waterfall { columns: 3; } }
+    @media (max-width: 768px)  { .waterfall { columns: 2; column-gap: 12px; padding: 0 12px; } }
+    @media (max-width: 420px)  { .waterfall { columns: 1; } }
+
+    /* ===== 玻璃卡片 ===== */
+    .skill-card {
+      break-inside: avoid;
+      margin-bottom: 16px;
+      border-radius: 20px;
+      padding: 22px 20px;
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      box-shadow:
+        0 2px 20px rgba(0,0,0,0.2),
+        inset 0 0 0 0.5px rgba(255,255,255,0.04);
+      transition: all 0.4s cubic-bezier(0.25,1,0.5,1);
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+    .skill-card::after {
+      content: '';
+      position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.03) 0%, transparent 50%);
+      pointer-events: none; opacity: 0; transition: opacity 0.4s;
+    }
+    .skill-card:hover::after { opacity: 1; }
+    .skill-card:hover {
+      border-color: rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      box-shadow:
+        0 8px 40px rgba(0,0,0,0.35),
+        inset 0 0 0 0.5px rgba(255,255,255,0.06);
+      transform: translateY(-3px);
+    }
+    .skill-card.reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.25,1,0.5,1);
+    }
+    .skill-card.revealed { opacity: 1; transform: translateY(0); }
+
+    /* ===== 卡片内部 ===== */
+    .card-top-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .card-emoji {
+      width: 38px; height: 38px; border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .card-badge {
+      margin-left: auto; font-size: 10px; font-weight: 700; padding: 3px 10px;
+      border-radius: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+      border: 0.5px solid transparent;
+    }
+    .badge-official {
+      background: rgba(212,168,83,0.1); color: #d4a853;
+      border-color: rgba(212,168,83,0.2);
+    }
+    .badge-community {
+      background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .badge-hot {
+      background: rgba(255,100,80,0.1); color: #ff6b5b;
+      border-color: rgba(255,100,80,0.2);
+    }
+
+    .card-title {
+      font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.92);
+      margin-bottom: 6px; letter-spacing: -0.01em;
+    }
+    .card-desc {
+      font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .card-tags {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+    }
+    .tag {
+      font-size: 10px; padding: 4px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.35);
+      border: 0.5px solid rgba(255,255,255,0.05);
+      letter-spacing: 0.02em;
+    }
+
+    .card-actions {
+      display: flex; gap: 8px;
+    }
+    .btn {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 9px 14px; border-radius: 12px; font-size: 12px; font-weight: 600;
+      border: none; cursor: pointer; transition: all 0.3s cubic-bezier(0.25,1,0.5,1);
+      font-family: inherit; letter-spacing: 0.01em;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, rgba(212,168,83,0.2), rgba(180,140,60,0.12));
+      color: #e0c87c; border: 0.5px solid rgba(212,168,83,0.2);
+    }
+    .btn-gold:hover {
+      background: linear-gradient(135deg, rgba(212,168,83,0.3), rgba(180,140,60,0.2));
+      border-color: rgba(212,168,83,0.35);
+      box-shadow: 0 4px 16px rgba(212,168,83,0.1);
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.5);
+      border: 0.5px solid rgba(255,255,255,0.08);
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    /* ===== Loader ===== */
+    #loadMoreTrigger { height: 80px; display: flex; align-items: center; justify-content: center; }
+    .loader-spin {
+      width: 28px; height: 28px; border: 2px solid rgba(255,255,255,0.08);
+      border-top-color: rgba(212,168,83,0.5); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== 安装指南玻璃卡片 ===== */
+    .install-section {
+      max-width: 700px; margin: 40px auto 60px; padding: 0 20px;
+    }
+    .install-card {
+      border-radius: 20px; padding: 28px 24px;
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    }
+    .install-card h2 {
+      font-size: 19px; font-weight: 700; color: rgba(255,255,255,0.9);
+      margin-bottom: 12px; letter-spacing: -0.02em;
+    }
+    .install-card p {
+      font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 12px; line-height: 1.7;
+    }
+    .cmd-line {
+      display: flex; align-items: center; gap: 10px; margin: 8px 0;
+      background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px 14px;
+      border: 0.5px solid rgba(255,255,255,0.05);
+      font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 12px;
+      color: rgba(255,255,255,0.55);
+    }
+    .cmd-line .clr { color: rgba(212,168,83,0.7); }
+    .cmd-line .dim { color: rgba(255,255,255,0.25); }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(212,168,83,0.12); border: 0.5px solid rgba(212,168,83,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #d4a853; flex-shrink: 0;
+    }
+
+    /* ===== Toast ===== */
+    #toast {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
+      z-index: 200; opacity: 0; pointer-events: none;
+      background: rgba(20,25,35,0.85); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: rgba(255,255,255,0.8); font-size: 12px;
+      padding: 10px 22px; border-radius: 14px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: all 0.35s cubic-bezier(0.25,1,0.5,1);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== Footer ===== */
+    .footer {
+      text-align: center; padding: 32px 20px 40px;
+      color: rgba(255,255,255,0.18); font-size: 11px;
+    }
+    .footer a { color: rgba(255,255,255,0.25); text-decoration: none; }
+    .footer a:hover { color: rgba(255,255,255,0.5); }
+
+    /* ===== Preview Overlay ===== */
+    #previewOverlay {
+      position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+      padding: 20px;
+    }
+    #previewOverlay.open { opacity: 1; pointer-events: all; }
+    #previewBox {
+      background: rgba(20,25,35,0.92); backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 20px; border: 0.5px solid rgba(255,255,255,0.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto;
+      padding: 28px 24px;
+    }
+    #previewBox h3 {
+      font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    #previewBox pre {
+      background: rgba(0,0,0,0.35); border-radius: 12px; padding: 16px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px;
+      color: rgba(255,255,255,0.6); overflow-x: auto; white-space: pre-wrap;
+      line-height: 1.6; border: 0.5px solid rgba(255,255,255,0.05);
+    }
+    #previewBox .close-btn {
+      position: absolute; top: 8px; right: 8px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5); font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    #previewBox .close-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    #previewBox .preview-actions { display: flex; gap: 8px; margin-top: 18px; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo"><span class="dot"></span>Trae Skill Store</a>
+  <ul class="nav-links">
+    <li><a href="#skills">技能</a></li>
+    <li><a href="#install">安装指南</a></li>
+    <li><a href="index.html">主页</a></li>
+  </ul>
+</nav>
+
+<header class="hero">
+  <div class="hero-icon">✨</div>
+  <h1>Trae 技能商店</h1>
+  <p>小红书风格 · 无限瀑布流 · 玻璃拟态<br>精选 AI 编程技能，下载即用</p>
+  <div class="hero-stats">
+    <span><strong id="skillCount">0</strong> 技能</span>
+    <span><strong>4</strong> 分类</span>
+    <span><strong>免费</strong> 全部</span>
+  </div>
+</header>
+
+<div class="tabs-bar" id="tabsBar">
+  <button class="tab-btn active" data-filter="all">🔥 全部</button>
+  <button class="tab-btn" data-filter="official">⭐ 官方</button>
+  <button class="tab-btn" data-filter="coding">💻 编码</button>
+  <button class="tab-btn" data-filter="quality">🛡 质量</button>
+  <button class="tab-btn" data-filter="devops">⚙ DevOps</button>
+  <button class="tab-btn" data-filter="docs">📋 文档</button>
+  <button class="tab-btn" data-filter="ui">🎨 前端/UI</button>
+  <button class="tab-btn" data-filter="data">🗄 数据</button>
+  <button class="tab-btn" data-filter="ai">🤖 AI/LLM</button>
+</div>
+
+<div class="section-label" id="skills">发现技能</div>
+<div class="waterfall" id="waterfall"></div>
+<div id="loadMoreTrigger"><div class="loader-spin"></div></div>
+
+<section class="install-section" id="install">
+  <div class="install-card">
+    <h2>📦 安装指南</h2>
+    <p>下载 Skill 文件后，按以下步骤安装到 Trae IDE：</p>
+    <div class="cmd-line"><span class="step-num">1</span> <span class="clr">mkdir -p</span> .trae/skills</div>
+    <div class="cmd-line"><span class="step-num">2</span> <span class="dim"># 将下载的 SKILL.md 放入对应文件夹</span></div>
+    <div class="cmd-line"><span class="step-num">2</span> <span class="clr">mkdir -p</span> .trae/skills/code-reviewer</div>
+    <div class="cmd-line"><span class="step-num">2</span> <span class="clr">cp</span> SKILL.md .trae/skills/code-reviewer/</div>
+    <div class="cmd-line"><span class="step-num">3</span> <span class="dim"># 重启 Trae IDE，新技能即生效</span></div>
+    <p style="margin-top:16px;">下载的是完整的 <code style="background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:6px;font-size:11px;">SKILL.md</code> 文件，包含名称、描述、触发条件和使用说明。</p>
+  </div>
+</section>
+
+<footer class="footer"><p>Trae Skill Store · 社区贡献 & 官方整理 · <a href="index.html">返回主页</a></p></footer>
+
+<div id="toast"></div>
+
+<div id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div id="previewBox" style="position:relative;">
+    <button class="close-btn" onclick="closePreview()" style="position:absolute;top:8px;right:8px;">✕</button>
+    <h3 id="pvTitle"></h3>
+    <pre id="pvContent"></pre>
+    <div class="preview-actions">
+      <button class="btn btn-gold" id="pvDownload" style="flex:1;">⬇ 下载 SKILL.md</button>
+      <button class="btn btn-ghost" onclick="closePreview()" style="flex:0 0 auto;padding:9px 20px;">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+
+  /* ================================================================
+   *  技能数据库 — 36 个
+   * ================================================================ */
+  var ALL_SKILLS = [
+    /* ---- official ---- */
+    { name:'code-reviewer', title:'代码审查', emoji:'🔍', badge:'官方', badgeCls:'badge-official', cats:['official','quality'], tags:['审查','最佳实践','MR'], desc:'结构化代码审查，反馈代码质量、正确性和最佳实践问题。适用合并请求审查。', md:'---\nname: "code-reviewer"\ndescription: "执行代码审查任务。审查合并请求、代码差异，提供代码质量、正确性和最佳实践反馈。"\n---\n\n# 代码审查\n\n## 工作流程\n1. 阅读代码变更，理解修改意图和上下文\n2. 检查正确性：逻辑错误、边界条件、空值处理\n3. 检查质量：命名规范、结构、可读性\n4. 检查最佳实践：设计模式、性能、安全性\n5. 提供 [严重]/[建议]/[优化] 三级反馈\n6. 不确定时使用 AskUserQuestion 澄清' },
+    { name:'debugger', title:'运行时调试器', emoji:'🐛', badge:'官方', badgeCls:'badge-official', cats:['official','quality'], tags:['调试','运行时','日志'], desc:'通过 HTTP 收集运行时日志，遵循假设→插桩→复现→分析→修复的科 学调试流程。', md:'---\nname: "debugger"\ndescription: "调试需要运行时证据的复杂问题。启动调试服务器收集日志，遵循科学调试流程。"\n---\n\n# 运行时调试器\n\n## 工作流程\n1. 理解 Bug 症状，形成初始假设\n2. 在关键路径插入调试日志（HTTP 上报）\n3. 启动调试服务器收集运行时数据\n4. 指导用户复现问题\n5. 分析日志，验证假设\n6. 定位根因并实施修复\n7. 验证后清理调试代码' },
+    { name:'security-reviewer', title:'安全审查', emoji:'🛡️', badge:'官方', badgeCls:'badge-official', cats:['official','quality'], tags:['安全','漏洞','审计'], desc:'扫描代码安全漏洞，审查注入攻击、XSS、CSRF、敏感信息泄露等风险。', md:'---\nname: "security-reviewer"\ndescription: "执行代码安全扫描。审查代码差异中的安全漏洞、风险和安全最佳实践。"\n---\n\n# 安全审查\n\n## 工作流程\n1. 识别安全边界：输入、输出、权限、存储\n2. 检查常见漏洞：注入攻击、XSS、CSRF 等\n3. 审查认证和授权逻辑\n4. 检查数据加密和传输安全\n5. 按风险等级提供安全建议' },
+    { name:'generate-mini-app', title:'小程序生成', emoji:'📱', badge:'官方', badgeCls:'badge-official', cats:['official','coding'], tags:['Taro','微信小程序','跨端'], desc:'基于 Taro 框架生成多端小程序代码，支持微信、支付宝等平台。', md:'---\nname: "generate-mini-app"\ndescription: "基于 Taro 生成多端小程序代码。适用微信/支付宝等跨端开发。"\n---\n\n# 小程序代码生成\n\n## 工作流程\n1. 确认小程序类型和目标平台\n2. 了解功能需求、页面结构、交互逻辑\n3. 生成符合 Taro 规范的组件和页面代码\n4. 确保代码可直接运行，含完整配置和数据流' },
+
+    /* ---- coding ---- */
+    { name:'api-doc-generator', title:'API 文档生成', emoji:'📋', badge:'热门', badgeCls:'badge-hot', cats:['coding','docs'], tags:['OpenAPI','Swagger','路由'], desc:'扫描路由定义自动生成 OpenAPI 3.0 / Swagger 文档，含参数和响应 Schema。', md:'---\nname: "api-doc-generator"\ndescription: "从源码自动生成 API 接口文档。适用需要 OpenAPI/Swagger 文档的后端项目。"\n---\n\n# API 文档生成器\n\n## 工作流程\n1. 扫描路由文件（Express Router / FastAPI / Spring）\n2. 解析 HTTP 方法、路径、参数、响应结构\n3. 提取类型定义中的 Schema\n4. 生成 OpenAPI 3.0 JSON/YAML' },
+    { name:'test-generator', title:'测试用例生成', emoji:'🧪', badge:'热门', badgeCls:'badge-hot', cats:['coding','quality'], tags:['单元测试','Jest','Pytest'], desc:'分析源码自动生成测试用例，覆盖边界条件、异常路径和核心业务逻辑。', md:'---\nname: "test-generator"\ndescription: "分析源码并生成单元测试和集成测试。适用需要快速补充测试覆盖的项目。"\n---\n\n# 测试用例生成器\n\n## 工作流程\n1. 分析函数签名、分支逻辑和边界条件\n2. 确定测试框架（Jest/Pytest/Go testing）\n3. 生成：正常输入、边界值、异常输入测试\n4. 生成 Mock 数据和依赖模拟' },
+    { name:'refactor-assistant', title:'代码重构助手', emoji:'🔧', badge:'推荐', badgeCls:'badge-community', cats:['coding','quality'], tags:['重构','设计模式','清理'], desc:'识别坏味道，提供重构建议并安全执行：提取方法、简化条件、引入多态等。', md:'---\nname: "refactor-assistant"\ndescription: "识别代码坏味道并执行安全重构。适用改善代码结构、消除技术债务的场景。"\n---\n\n# 代码重构助手\n\n## 工作流程\n1. 分析目标代码：长函数、重复代码、过度耦合\n2. 提供重构建议和改进方案\n3. 安全执行：提取方法/内联、简化条件、引入多态\n4. 确保重构后行为和接口不变' },
+    { name:'prompt-engineer', title:'提示词优化器', emoji:'🎯', badge:'推荐', badgeCls:'badge-community', cats:['coding','ai'], tags:['Prompt','LLM','优化'], desc:'优化 AI 提示词，提升 LLM 输出质量和一致性，支持迭代测试和 A/B 对比。', md:'---\nname: "prompt-engineer"\ndescription: "优化 AI 提示词提升 LLM 输出质量。适用需要高质量 Prompt 的场景。"\n---\n\n# 提示词优化器\n\n## 工作流程\n1. 收集原始 Prompt 和期望输出\n2. 分析问题：不清晰、缺少约束、格式不明确\n3. 重写 Prompt 并添加角色、格式、边界条件\n4. 支持迭代测试和效果对比' },
+    { name:'regex-wizard', title:'正则表达式向导', emoji:'🎩', badge:'社区', badgeCls:'badge-community', cats:['coding'], tags:['正则','Regex','模式匹配'], desc:'根据自然语言描述生成正则表达式，提供可视化解释和测试用例。', md:'---\nname: "regex-wizard"\ndescription: "根据自然语言描述生成正则表达式。适用需要快速编写复杂正则的场景。"\n---\n\n# 正则表达式向导\n\n## 工作流程\n1. 理解用户的正则需求（匹配/提取/替换）\n2. 生成正则表达式并提供分解说明\n3. 提供测试用例和边界情况\n4. 支持多种语言：JS/Python/Java/Go' },
+    { name:'data-mocker', title:'Mock 数据生成', emoji:'🎲', badge:'社区', badgeCls:'badge-community', cats:['coding','data'], tags:['Mock','Faker','测试数据'], desc:'根据 Schema 定义批量生成逼真的 Mock 数据，支持中文姓名、地址、图片等。', md:'---\nname: "data-mocker"\ndescription: "根据 Schema 生成 Mock 数据。适用需要测试数据的前后端开发场景。"\n---\n\n# Mock 数据生成器\n\n## 工作流程\n1. 确认所需数据结构（字段名、类型、约束）\n2. 选择数据域：中文/英文、行业相关\n3. 生成 JSON/CSV/SQL 格式数据\n4. 支持批量生成和关联关系' },
+    { name:'code-snippet', title:'代码片段库', emoji:'📦', badge:'社区', badgeCls:'badge-community', cats:['coding'], tags:['代码片段','模板','复用'], desc:'常用代码片段索引：排序算法、数据结构、设计模式、工具函数，可快速搜索和复用。', md:'---\nname: "code-snippet"\ndescription: "提供常用代码片段和模板。适用需要快速找到可复用代码的场景。"\n---\n\n# 代码片段库\n\n## 工作流程\n1. 理解用户需要的功能类型\n2. 从模板库匹配最佳片段\n3. 根据用户上下文调整代码\n4. 提供使用说明和注意事项' },
+    { name:'project-starter', title:'项目脚手架', emoji:'🏗️', badge:'热门', badgeCls:'badge-hot', cats:['coding','devops'], tags:['脚手架','模板','初始化'], desc:'根据技术栈描述快速搭建项目骨架，含目录结构、配置文件和依赖管理。', md:'---\nname: "project-starter"\ndescription: "快速搭建项目脚手架。适用需要初始化新项目的场景。"\n---\n\n# 项目脚手架\n\n## 工作流程\n1. 确认技术栈和框架\n2. 生成目录结构和基础配置\n3. 配置 ESLint/Prettier/tsconfig 等\n4. 生成入口文件和基础模块' },
+
+    /* ---- quality ---- */
+    { name:'perf-analyzer', title:'性能分析助手', emoji:'⚡', badge:'推荐', badgeCls:'badge-community', cats:['quality'], tags:['性能','优化','Profile'], desc:'分析代码性能瓶颈，提供优化建议：算法复杂度、内存使用、渲染性能。', md:'---\nname: "perf-analyzer"\ndescription: "分析代码性能瓶颈并提供优化建议。适用需要提升应用性能的场景。"\n---\n\n# 性能分析助手\n\n## 工作流程\n1. 识别性能热点：循环、递归、大数据处理\n2. 分析算法复杂度和内存占用\n3. 提供优化方案：缓存、懒加载、算法替换\n4. 预估优化效果' },
+    { name:'error-decoder', title:'错误信息解读', emoji:'🔮', badge:'社区', badgeCls:'badge-community', cats:['quality'], tags:['错误','调试','Stacktrace'], desc:'快速解读编译器错误、运行时异常和堆栈信息，提供修复方案。', md:'---\nname: "error-decoder"\ndescription: "解读编译器错误和运行时异常。适用快速定位和修复报错问题的场景。"\n---\n\n# 错误信息解读器\n\n## 工作流程\n1. 解析错误类型和堆栈信息\n2. 定位源代码中的问题位置\n3. 解释错误原因\n4. 提供修复方案和预防建议' },
+    { name:'log-analyzer', title:'日志分析器', emoji:'📊', badge:'社区', badgeCls:'badge-community', cats:['quality','devops'], tags:['日志','分析','监控'], desc:'分析应用日志文件，提取错误模式、异常趋势，生成结构化报告。', md:'---\nname: "log-analyzer"\ndescription: "分析应用日志并提取错误模式。适用需要从海量日志中定位问题的场景。"\n---\n\n# 日志分析器\n\n## 工作流程\n1. 解析日志格式和级别（ERROR/WARN/INFO）\n2. 提取错误模式和高频异常\n3. 统计时间分布和趋势\n4. 生成结构化分析报告' },
+
+    /* ---- devops ---- */
+    { name:'commit-msg-gen', title:'Commit 信息生成', emoji:'✍️', badge:'推荐', badgeCls:'badge-community', cats:['devops'], tags:['Git','Commit','规范'], desc:'分析 diff 自动生成 Conventional Commits 规范的提交信息，支持中英文。', md:'---\nname: "commit-msg-generator"\ndescription: "分析变更并生成规范的 Git 提交信息。适用需要统一提交格式的团队。"\n---\n\n# Commit 信息生成器\n\n## 工作流程\n1. 运行 git diff 获取变更内容\n2. 分析变更类型：feat/fix/refactor/docs/test\n3. 按 Conventional Commits 格式生成\n4. 标题不超过 72 字符' },
+    { name:'docker-compose-gen', title:'Docker Compose 生成', emoji:'🐳', badge:'社区', badgeCls:'badge-community', cats:['devops'], tags:['Docker','容器','部署'], desc:'根据服务描述生成 docker-compose.yml，含网络、卷、健康检查和环境变量。', md:'---\nname: "docker-compose-gen"\ndescription: "根据服务描述生成 Docker Compose 配置。适用容器化部署场景。"\n---\n\n# Docker Compose 生成器\n\n## 工作流程\n1. 了解服务组成：数据库、缓存、应用、网关\n2. 设计网络拓扑和卷映射\n3. 生成 docker-compose.yml 含健康检查\n4. 提供启动和调试命令' },
+    { name:'ci-config', title:'CI/CD 配置生成', emoji:'🔄', badge:'社区', badgeCls:'badge-community', cats:['devops'], tags:['CI/CD','Pipeline','GitHub Actions'], desc:'生成 GitHub Actions / GitLab CI 流水线配置，含测试、构建、部署阶段。', md:'---\nname: "ci-config"\ndescription: "生成 CI/CD 流水线配置。适用需要搭建自动化构建部署管道的场景。"\n---\n\n# CI/CD 配置生成器\n\n## 工作流程\n1. 确认 CI 平台：GitHub Actions / GitLab CI\n2. 设计流水线阶段：test → build → deploy\n3. 生成工作流配置文件\n4. 含缓存、环境变量和通知配置' },
+    { name:'env-setup', title:'开发环境配置', emoji:'🖥️', badge:'社区', badgeCls:'badge-community', cats:['devops'], tags:['环境','配置','DevContainer'], desc:'生成 devcontainer.json / .env 模板，含 VS Code 插件、环境变量和工具链。', md:'---\nname: "env-setup"\ndescription: "生成开发环境配置文件。适用需要标准化团队开发环境的场景。"\n---\n\n# 开发环境配置助手\n\n## 工作流程\n1. 确认技术栈和工具链\n2. 生成 devcontainer.json / Dockerfile\n3. 配置 VS Code 推荐插件\n4. 生成 .env 模板和说明' },
+    { name:'dependency-checker', title:'依赖检查更新', emoji:'🔗', badge:'社区', badgeCls:'badge-community', cats:['devops'], tags:['依赖','npm','安全'], desc:'检查项目依赖版本，发现过时包、安全漏洞，提供升级路径和建议。', md:'---\nname: "dependency-checker"\ndescription: "检查项目依赖版本和安全漏洞。适用定期维护项目依赖的场景。"\n---\n\n# 依赖检查更新\n\n## 工作流程\n1. 解析 package.json / requirements.txt / Cargo.toml\n2. 对比最新版本和已安装版本\n3. 识别有安全公告的依赖\n4. 生成升级建议和兼容性说明' },
+    { name:'git-hooks-gen', title:'Git Hooks 生成', emoji:'🪝', badge:'社区', badgeCls:'badge-community', cats:['devops'], tags:['Git','Hooks','Husky'], desc:'生成 pre-commit、pre-push 等 Git Hooks，自动运行 lint、测试、格式检查。', md:'---\nname: "git-hooks-gen"\ndescription: "生成 Git Hooks 配置。适用需要自动化代码检查的团队项目。"\n---\n\n# Git Hooks 生成器\n\n## 工作流程\n1. 确认需要的 Hook 类型和检查项\n2. 生成 Husky / pre-commit 配置\n3. 配置 lint-staged 只检查变更文件\n4. 提供安装和跳过说明' },
+
+    /* ---- docs ---- */
+    { name:'readme-generator', title:'README 生成器', emoji:'📖', badge:'热门', badgeCls:'badge-hot', cats:['docs'], tags:['README','文档','项目'], desc:'分析项目结构自动生成专业的 README.md，含安装、使用、API 和贡献指南。', md:'---\nname: "readme-generator"\ndescription: "自动生成专业 README.md。适用需要快速创建项目文档的场景。"\n---\n\n# README 生成器\n\n## 工作流程\n1. 扫描项目结构和技术栈\n2. 生成标准 README 模板\n3. 包含：介绍、安装、使用、API、贡献\n4. 根据项目实际内容填充' },
+    { name:'changelog-generator', title:'更新日志生成', emoji:'📝', badge:'社区', badgeCls:'badge-community', cats:['docs','devops'], tags:['Changelog','Release','Git'], desc:'从 Git 历史生成 CHANGELOG.md，按版本分组，分类展示新功能、修复、破坏性变更。', md:'---\nname: "changelog-generator"\ndescription: "从 Git 历史生成 CHANGELOG.md。适用维护项目版本更新日志。"\n---\n\n# 更新日志生成器\n\n## 工作流程\n1. 获取两个版本标签间的提交记录\n2. 按类型分类：feat/fix/BREAKING/perf\n3. 生成结构化 Markdown CHANGELOG\n4. 保持一致的格式和模板' },
+    { name:'license-picker', title:'开源许可证选择', emoji:'⚖️', badge:'社区', badgeCls:'badge-community', cats:['docs'], tags:['License','开源','法律'], desc:'根据项目需求推荐合适的开源许可证，解释各许可证的权限、条件和限制。', md:'---\nname: "license-picker"\ndescription: "推荐合适的开源许可证。适用需要为项目选择开源许可证的场景。"\n---\n\n# 开源许可证选择器\n\n## 工作流程\n1. 了解项目需求和约束\n2. 对比 MIT、Apache-2.0、GPL、BSD 等\n3. 解释权限、条件和限制\n4. 推荐最合适的许可证' },
+    { name:'diagram-as-code', title:'图表即代码', emoji:'📐', badge:'社区', badgeCls:'badge-community', cats:['docs','coding'], tags:['Mermaid','PlantUML','架构图'], desc:'用代码描述生成流程图、架构图、时序图、ER 图，支持 Mermaid 和 PlantUML。', md:'---\nname: "diagram-as-code"\ndescription: "用代码生成各类图表。适用需要绘制架构图、流程图、时序图的场景。"\n---\n\n# 图表即代码\n\n## 工作流程\n1. 了解图类型：架构/流程/时序/ER/甘特\n2. 收集关键元素和关系\n3. 生成 Mermaid 或 PlantUML 代码\n4. 确保图表清晰可渲染' },
+
+    /* ---- ui ---- */
+    { name:'css-animator', title:'CSS 动画生成', emoji:'✨', badge:'热门', badgeCls:'badge-hot', cats:['ui'], tags:['CSS','动画','关键帧'], desc:'根据视觉描述生成 CSS 动画代码，支持 keyframes、transition、scroll-timeline。', md:'---\nname: "css-animator"\ndescription: "根据描述生成 CSS 动画代码。适用需要快速创建流畅动画效果的前端开发。"\n---\n\n# CSS 动画生成器\n\n## 工作流程\n1. 理解动画效果描述\n2. 选择技术：transition / keyframes / WAAPI\n3. 生成 CSS 代码和必要的 HTML\n4. 提供缓动函数和性能优化建议' },
+    { name:'tailwind-helper', title:'Tailwind 助手', emoji:'💨', badge:'社区', badgeCls:'badge-community', cats:['ui'], tags:['Tailwind','CSS','Utility'], desc:'快速生成 Tailwind CSS 类组合，从设计描述到代码，含响应式、暗色模式。', md:'---\nname: "tailwind-helper"\ndescription: "快速生成 Tailwind CSS 类组合。适用 Tailwind 项目的 UI 开发。"\n---\n\n# Tailwind CSS 助手\n\n## 工作流程\n1. 理解 UI 需求和布局描述\n2. 生成 Tailwind 类组合\n3. 包含响应式断点和暗色模式\n4. 提供组件化组织建议' },
+    { name:'component-scaffolder', title:'组件脚手架', emoji:'🧩', badge:'推荐', badgeCls:'badge-community', cats:['ui','coding'], tags:['React','Vue','组件'], desc:'根据描述快速生成前端组件骨架：Props 类型、样式、测试、Storybook。', md:'---\nname: "component-scaffolder"\ndescription: "生成前端组件骨架代码。适用快速创建 React/Vue 组件的场景。"\n---\n\n# 组件脚手架\n\n## 工作流程\n1. 确认框架：React/Vue/Svelte\n2. 定义 Props/Events/Slots\n3. 生成组件文件 + 类型定义\n4. 生成样式文件和测试模板' },
+    { name:'i18n-helper', title:'国际化助手', emoji:'🌐', badge:'社区', badgeCls:'badge-community', cats:['ui','coding'], tags:['i18n','翻译','多语言'], desc:'提取硬编码文本，生成 i18n 配置，支持中/英/日/韩等多语言翻译和 key 管理。', md:'---\nname: "i18n-helper"\ndescription: "提取硬编码文本生成国际化配置。适用为项目添加多语言支持。"\n---\n\n# 国际化翻译助手\n\n## 工作流程\n1. 扫描项目中硬编码的用户可见文本\n2. 生成唯一 i18n key\n3. 创建各语言翻译文件（JSON/YAML）\n4. 替换源代码为 i18n 调用' },
+    { name:'color-system', title:'色彩系统设计', emoji:'🎨', badge:'社区', badgeCls:'badge-community', cats:['ui'], tags:['色彩','设计系统','品牌'], desc:'生成品牌色彩系统：主色、辅助色、语义色、灰度阶梯，含 CSS 变量和 Token。', md:'---\nname: "color-system"\ndescription: "设计品牌色彩系统。适用需要建立统一设计规范的 UI 项目。"\n---\n\n# 色彩系统设计\n\n## 工作流程\n1. 确认品牌调性和主色调\n2. 生成色彩阶梯：50-950\n3. 定义语义色：success/warning/error/info\n4. 输出 CSS 变量和 Design Token' },
+
+    /* ---- data ---- */
+    { name:'db-schema-designer', title:'数据库 Schema 设计', emoji:'🗄️', badge:'推荐', badgeCls:'badge-community', cats:['data','coding'], tags:['数据库','Schema','SQL'], desc:'从业务需求生成表结构：字段类型、索引、外键，含 DDL 和 Mermaid ER 图。', md:'---\nname: "db-schema-designer"\ndescription: "从业务需求生成数据库表结构。适用新建项目或设计 Schema 的场景。"\n---\n\n# 数据库 Schema 设计\n\n## 工作流程\n1. 了解实体、关系、查询模式\n2. 设计字段：类型、长度、约束\n3. 设计索引策略\n4. 生成 DDL + Mermaid ER 图' },
+    { name:'sql-optimizer', title:'SQL 优化器', emoji:'⚡', badge:'社区', badgeCls:'badge-community', cats:['data'], tags:['SQL','优化','查询'], desc:'分析 SQL 查询性能，提供索引建议、查询重写优化和执行计划解读。', md:'---\nname: "sql-optimizer"\ndescription: "分析和优化 SQL 查询性能。适用需要提升数据库查询效率的场景。"\n---\n\n# SQL 优化器\n\n## 工作流程\n1. 分析 SQL 查询结构和执行计划\n2. 检查索引使用情况和全表扫描\n3. 提供重写建议和索引创建方案\n4. 预估优化效果' },
+    { name:'data-migration', title:'数据迁移助手', emoji:'🚚', badge:'社区', badgeCls:'badge-community', cats:['data','devops'], tags:['迁移','ETL','数据'], desc:'生成数据库迁移脚本，支持 Schema 变更、数据转换和回滚方案。', md:'---\nname: "data-migration"\ndescription: "生成数据库迁移脚本。适用需要执行数据库变更和迁移的场景。"\n---\n\n# 数据迁移助手\n\n## 工作流程\n1. 对比源和目标 Schema 差异\n2. 生成迁移脚本（up 和 down）\n3. 处理数据转换和兼容性问题\n4. 提供回滚方案和验证步骤' },
+
+    /* ---- ai ---- */
+    { name:'llm-playground', title:'LLM 对比测试', emoji:'🤖', badge:'热门', badgeCls:'badge-hot', cats:['ai'], tags:['LLM','对比','Prompt'], desc:'同一条 Prompt 对比多个 LLM 模型输出，分析差异，选择最佳模型。', md:'---\nname: "llm-playground"\ndescription: "对比多个 LLM 模型输出。适用需要评估不同模型效果的场景。"\n---\n\n# LLM 对比测试\n\n## 工作流程\n1. 收集待对比的 Prompt\n2. 定义评估维度和指标\n3. 对比不同模型输出\n4. 分析差异并给出推荐' },
+    { name:'agent-designer', title:'Agent 流程设计', emoji:'🧭', badge:'推荐', badgeCls:'badge-community', cats:['ai','coding'], tags:['Agent','工作流','自动化'], desc:'设计 AI Agent 工作流：步骤定义、工具调用、决策节点、回退逻辑。', md:'---\nname: "agent-designer"\ndescription: "设计 AI Agent 工作流程。适用需要构建自动化 Agent 的场景。"\n---\n\n# Agent 流程设计器\n\n## 工作流程\n1. 明确 Agent 的目标和边界\n2. 设计步骤：感知 → 决策 → 执行 → 验证\n3. 定义工具调用和决策节点\n4. 添加回退和异常处理逻辑' },
+  ];
+
+  /* ================================================================
+   *  全局状态
+   * ================================================================ */
+  var currentFilter = 'all';
+  var filteredSkills = ALL_SKILLS.slice();
+  var BATCH = 8;
+  var shown = 0;
+  var isLoading = false;
+  var currentPreviewSkill = null;
+
+  var waterfall = document.getElementById('waterfall');
+  var loadTrigger = document.getElementById('loadMoreTrigger');
+  document.getElementById('skillCount').textContent = ALL_SKILLS.length;
+
+  /* ================================================================
+   *  筛选
+   * ================================================================ */
+  function filterSkills(filter) {
+    currentFilter = filter;
+    filteredSkills = filter === 'all'
+      ? ALL_SKILLS.slice()
+      : ALL_SKILLS.filter(function(s) { return s.cats.indexOf(filter) !== -1; });
+    /* 随机打乱 */
+    for (var i = filteredSkills.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = filteredSkills[i]; filteredSkills[i] = filteredSkills[j]; filteredSkills[j] = tmp;
+    }
+    shown = 0;
+    waterfall.innerHTML = '';
+    loadMore();
+  }
+
+  /* ================================================================
+   *  渲染单个卡片
+   * ================================================================ */
+  function renderCard(skill) {
+    var card = document.createElement('div');
+    card.className = 'skill-card reveal';
+    card.setAttribute('data-name', skill.name);
+
+    var tagsHtml = skill.tags.map(function(t) {
+      return '<span class="tag">' + t + '</span>';
+    }).join('');
+
+    card.innerHTML =
+      '<div class="card-top-row">' +
+        '<span class="card-emoji">' + skill.emoji + '</span>' +
+        '<span class="card-badge ' + skill.badgeCls + '">' + skill.badge + '</span>' +
+      '</div>' +
+      '<div class="card-title">' + skill.title + '</div>' +
+      '<div class="card-desc">' + skill.desc + '</div>' +
+      '<div class="card-tags">' + tagsHtml + '</div>' +
+      '<div class="card-actions">' +
+        '<button class="btn btn-gold" data-action="download">⬇ 下载</button>' +
+        '<button class="btn btn-ghost" data-action="preview">👁 预览</button>' +
+      '</div>';
+
+    card.querySelector('[data-action="download"]').addEventListener('click', function(e) {
+      e.stopPropagation();
+      downloadSkill(skill);
+    });
+    card.querySelector('[data-action="preview"]').addEventListener('click', function(e) {
+      e.stopPropagation();
+      previewSkill(skill);
+    });
+
+    return card;
+  }
+
+  /* ================================================================
+   *  加载更多 (无限滚动)
+   * ================================================================ */
+  function loadMore() {
+    if (isLoading) return;
+    isLoading = true;
+    var fragment = document.createDocumentFragment();
+    var end = Math.min(shown + BATCH, filteredSkills.length);
+    for (var i = shown; i < end; i++) {
+      fragment.appendChild(renderCard(filteredSkills[i]));
+    }
+    waterfall.appendChild(fragment);
+    shown = end;
+
+    /* reveal animation */
+    requestAnimationFrame(function() {
+      var cards = waterfall.querySelectorAll('.reveal:not(.revealed)');
+      cards.forEach(function(c) { c.classList.add('revealed'); });
+    });
+
+    isLoading = false;
+
+    if (shown >= filteredSkills.length) {
+      loadTrigger.innerHTML = '<div style="color:rgba(255,255,255,0.2);font-size:12px;padding:20px;">— 已显示全部 ' + filteredSkills.length + ' 个技能 —</div>';
+    }
+  }
+
+  /* ================================================================
+   *  IntersectionObserver 加载更多
+   * ================================================================ */
+  var io = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting && shown < filteredSkills.length) {
+      loadMore();
+    }
+  }, { rootMargin: '200px' });
+  io.observe(loadTrigger);
+
+  /* ================================================================
+   *  标签栏点击
+   * ================================================================ */
+  document.getElementById('tabsBar').addEventListener('click', function(e) {
+    var btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    loadTrigger.innerHTML = '<div class="loader-spin"></div>';
+    filterSkills(btn.dataset.filter);
+  });
+
+  /* ================================================================
+   *  下载
+   * ================================================================ */
+  function downloadSkill(skill) {
+    var blob = new Blob([skill.md], { type: 'text/markdown;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'SKILL.md';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ 已下载 ' + skill.title);
+  }
+
+  /* ================================================================
+   *  预览
+   * ================================================================ */
+  var pvOverlay = document.getElementById('previewOverlay');
+  var pvTitle = document.getElementById('pvTitle');
+  var pvContent = document.getElementById('pvContent');
+  var pvDownload = document.getElementById('pvDownload');
+
+  function previewSkill(skill) {
+    currentPreviewSkill = skill;
+    pvTitle.innerHTML = skill.emoji + ' ' + skill.title;
+    pvContent.textContent = skill.md;
+    pvDownload.onclick = function() { downloadSkill(skill); closePreview(); };
+    pvOverlay.classList.add('open');
+  }
+  window.closePreview = function() {
+    pvOverlay.classList.remove('open');
+    currentPreviewSkill = null;
+  };
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePreview();
+  });
+
+  /* ================================================================
+   *  Toast
+   * ================================================================ */
+  var toastTimer;
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+  }
+
+  /* ================================================================
+   *  启动
+   * ================================================================ */
+  filterSkills('all');
+  loadMore();
+
+  console.log('Trae Skill Store · ' + ALL_SKILLS.length + ' skills · Glassmorphism + Waterfall');
+})();
+</script>
+</body>
+</html>

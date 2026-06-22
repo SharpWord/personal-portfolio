@@ -3,228 +3,198 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>全球自然纪录片 · 国家奇观索引</title>
-  <meta name="description" content="按大洲和国家整理的 40+ 部高分自然纪录片，附豆瓣评分、核心奇观与观看平台">
+  <title>3D 地球</title>
+  <meta name="description" content="高清 3D 地球">
+
+  <script>
+    window.CESIUM_BASE_URL = 'https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium/';
+  </script>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: "PingFang SC", "Inter", -apple-system, "Helvetica Neue", sans-serif;
-      background: #0a0f18; color: #e4e6ea; line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #cesiumContainer { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    .cesium-viewer-bottom { display: none !important; }
+
+    #loadingOverlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 1s ease; pointer-events: all;
     }
-    .hero {
-      text-align: center; padding: 100px 24px 60px;
-      background: linear-gradient(180deg, #0d1525 0%, #0a0f18 100%);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+    #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+    #loadingOverlay .spinner {
+      width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
     }
-    .hero-icon { font-size: 56px; margin-bottom: 16px; }
-    .hero h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -0.02em; color: #fff; margin-bottom: 12px; }
-    .hero p  { font-size: 15px; color: #8899aa; max-width: 560px; margin: 0 auto 32px; line-height: 1.7; }
-    .hero-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 24px; background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
-      color: #ccd; font-size: 14px; text-decoration: none;
-      transition: all 0.25s; font-weight: 500;
+    #loadingOverlay .text { color: #fff; font-size: 14px; margin-top: 16px; opacity: 0.8; }
+    #loadingOverlay .progress {
+      width: 200px; height: 3px; background: rgba(255,255,255,0.15);
+      border-radius: 3px; margin-top: 14px; overflow: hidden;
     }
-    .hero-btn:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.3); }
-    .continent-section { max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
-    .continent-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .continent-title { font-size: clamp(20px, 2.5vw, 26px); font-weight: 700; color: #fff; }
-    .country-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 20px; }
-    .country-card {
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px; padding: 24px; transition: border-color 0.25s, background 0.25s;
+    #loadingOverlay .progress-bar {
+      height: 100%; background: #fff; border-radius: 3px;
+      width: 0%; transition: width 0.4s ease;
     }
-    .country-card:hover { border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); }
-    .country-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .country-flag { font-size: 28px; line-height: 1; }
-    .country-name { font-size: 17px; font-weight: 700; color: #eee; }
-    .country-globe-btn {
-      display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px;
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 6px; color: #8899cc; font-size: 12px; text-decoration: none;
-      transition: all 0.2s; white-space: nowrap;
-    }
-    .country-globe-btn:hover { background: rgba(100,140,220,0.15); border-color: rgba(100,140,220,0.3); }
-    .doc-item { padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.05); }
-    .doc-item:first-of-type { padding-top: 0; border-top: none; }
-    .doc-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
-    .doc-title { font-size: 15px; font-weight: 600; color: #ddd; }
-    .doc-rating { font-size: 12px; font-weight: 700; color: #f0b90b; background: rgba(240,185,11,0.1); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
-    .doc-wonders { font-size: 13px; color: #889; line-height: 1.55; margin-bottom: 6px; }
-    .doc-platforms { display: flex; flex-wrap: wrap; gap: 6px; }
-    .platform-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(100,180,120,0.12); color: #8c8; }
-    .footer { text-align: center; padding: 48px 24px; color: #556; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 24px; }
-    .footer a { color: #778; text-decoration: none; }
-    .footer a:hover { color: #99a; }
-    @media (max-width: 500px) {
-      .hero { padding: 60px 20px 40px; }
-      .continent-section { padding: 32px 16px; }
-      .country-grid { grid-template-columns: 1fr; }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-<header class="hero">
-  <div class="hero-icon">🌍</div>
-  <h1>全球自然纪录片索引</h1>
-  <p>覆盖七大洲 30+ 国家，40+ 部高分纪录片。<br>每部均标注豆瓣评分、核心自然奇观与国内可观看平台。</p>
-  <a href="earth-globe.html" class="hero-btn">🗺 在 3D 地球上探索</a>
-</header>
-<div id="app"></div>
-<footer class="footer"><p>数据来源：豆瓣 / 哔哩哔哩 / 腾讯视频 · <a href="index.html">返回主页</a></p></footer>
-<script>
-(function() {
-  var DATA = [
-    { continent: '第一部分 亚洲', docs: [
-      { country: '中国', flag: '🇨🇳', coord: [116.4, 39.9], list: [
-        { title: '《美丽中国》', rating: 9.3, wonders: '青藏高原冰川、云南热带雨林、桂林喀斯特峰林、贵州溶洞、丹霞地貌、神农架原始森林', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《航拍中国》（全四季）', rating: '9.0~9.4', wonders: '张家界峰林、九寨沟彩池、塔克拉玛干沙漠、黄山云海、壶口瀑布、长白山天池、雅鲁藏布江峡谷', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《第三极》', rating: 9.4, wonders: '珠穆朗玛峰冰塔林、纳木错、羌塘无人区、藏北高原湿地、喜马拉雅山脉', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]},
-      { country: '日本', flag: '🇯🇵', coord: [138.0, 37.0], list: [
-        { title: '《野性日本》', rating: 8.8, wonders: '富士山火山地貌、北海道流冰雪原、屋久岛原始森林、冲绳珊瑚礁、知床半岛海岸', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '俄罗斯', flag: '🇷🇺', coord: [90.0, 60.0], list: [
-        { title: '《野性俄罗斯》', rating: 8.9, wonders: '贝加尔湖、勘察加火山群、西伯利亚泰加林、北极苔原、高加索山脉', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '印度', flag: '🇮🇳', coord: [78.0, 22.0], list: [
-        { title: '《野性印度》', rating: 8.7, wonders: '喜马拉雅南麓山地、西高止山雨林、塔尔沙漠、恒河湿地、德干高原', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '印度尼西亚', flag: '🇮🇩', coord: [115.0, -2.0], list: [
-        { title: '《野性印度尼西亚》', rating: 8.6, wonders: '科莫多岛、婆罗洲雨林、巴厘岛火山、苏拉威西珊瑚海、爪哇火山群', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '斯里兰卡', flag: '🇱🇰', coord: [80.7, 7.9], list: [
-        { title: '《奇迹时刻：斯里兰卡》', rating: 7.6, wonders: '辛哈拉加热带雨林、亚当峰山地、印度洋海岸线、高山茶园地貌', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '泰国', flag: '🇹🇭', coord: [101.0, 15.0], list: [
-        { title: '《野性泰国》', rating: 8.5, wonders: '清迈山地雨林、安达曼海珊瑚岛、喀斯特岩溶海岛、湄公河三角洲湿地', platforms: ['哔哩哔哩'] }
-      ]}
-    ]},
-    { continent: '第二部分 欧洲', docs: [
-      { country: '冰岛', flag: '🇮🇸', coord: [-19.0, 64.5], list: [
-        { title: '《冰与火之地：狂野冰岛》', rating: 8.8, wonders: '蓝冰洞、间歇泉、黑沙滩、钻石沙滩、火山地貌、北极极光、巨型瀑布群', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '挪威', flag: '🇳🇴', coord: [10.0, 61.0], list: [
-        { title: '《野性斯堪的纳维亚》', rating: 8.7, wonders: '挪威峡湾、罗弗敦群岛、北极极光、冰川雪原、北大西洋海岸', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '瑞士', flag: '🇨🇭', coord: [8.0, 46.8], list: [
-        { title: '《阿尔卑斯：自然的巨人》', rating: 8.9, wonders: '阿尔卑斯雪山冰川、高山冰蚀湖泊、高山草甸、山地峡谷地貌', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]},
-      { country: '意大利', flag: '🇮🇹', coord: [12.5, 42.0], list: [
-        { title: '《野性意大利》', rating: 8.5, wonders: '多洛米蒂山、埃特纳活火山、地中海海岸、亚平宁丘陵、阿尔卑斯北麓', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '英国', flag: '🇬🇧', coord: [-2.0, 54.5], list: [
-        { title: '《不列颠群岛自然史》', rating: 8.8, wonders: '苏格兰高地、巨人堤道、英格兰湖区、威尔士峡谷、北海悬崖海岸', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '法国', flag: '🇫🇷', coord: [2.5, 46.5], list: [
-        { title: '《野性法兰西》', rating: 8.6, wonders: '阿尔卑斯南麓、普罗旺斯丘陵、布列塔尼悬崖、中央高原火山地貌', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '西班牙', flag: '🇪🇸', coord: [-3.5, 40.0], list: [
-        { title: '《野性伊比利亚》', rating: 8.7, wonders: '比利牛斯山脉、安达卢西亚荒漠、地中海海岸、加那利群岛火山', platforms: ['哔哩哔哩'] }
-      ]}
-    ]},
-    { continent: '第三部分 非洲', docs: [
-      { country: '肯尼亚 / 坦桑尼亚', flag: '🇰🇪', coord: [36.0, -2.0], list: [
-        { title: '《塞伦盖蒂》', rating: 9.3, wonders: '东非大草原、角马年度大迁徙、马拉河、乞力马扎罗雪山、恩戈罗恩戈罗火山口', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]},
-      { country: '南非 / 纳米比亚', flag: '🇿🇦', coord: [22.0, -25.0], list: [
-        { title: '《BBC 非洲》', rating: 9.7, wonders: '纳米布红色沙漠、卡拉哈里盆地、好望角两洋交汇、桌山、刚果雨林边缘', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]},
-      { country: '埃及', flag: '🇪🇬', coord: [30.0, 26.5], list: [
-        { title: '《野性尼罗河》', rating: 8.6, wonders: '尼罗河峡谷、撒哈拉沙漠、红海珊瑚礁、西奈山地、尼罗河三角洲湿地', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '马达加斯加', flag: '🇲🇬', coord: [47.0, -19.0], list: [
-        { title: '《马达加斯加》（BBC）', rating: 9.2, wonders: '猴面包树大道、喀斯特石林、东部热带雨林、南部荒漠孤岛地貌', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '埃塞俄比亚', flag: '🇪🇹', coord: [40.0, 9.0], list: [
-        { title: '《埃塞俄比亚：非洲屋脊》', rating: 8.5, wonders: '东非大裂谷、尔塔阿雷熔岩湖、塞米恩山脉高原、火山荒漠地貌', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '摩洛哥', flag: '🇲🇦', coord: [-7.0, 31.5], list: [
-        { title: '《野性摩洛哥》', rating: 8.4, wonders: '阿特拉斯山脉、撒哈拉沙漠边缘、大西洋悬崖海岸、山地峡谷', platforms: ['哔哩哔哩'] }
-      ]}
-    ]},
-    { continent: '第四部分 北美洲', docs: [
-      { country: '美国', flag: '🇺🇸', coord: [-105.0, 40.0], list: [
-        { title: '《黄石公园》', rating: 8.7, wonders: '大棱镜彩泉、老忠实间歇泉、黄石大峡谷、地热台地、落基山原始森林', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《北美国家公园全记录》', rating: 8.9, wonders: '科罗拉多大峡谷、优胜美地花岗岩巨岩、阿拉斯加冰川、佛罗里达大沼泽、夏威夷火山', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '加拿大', flag: '🇨🇦', coord: [-105.0, 58.0], list: [
-        { title: '《野性加拿大》', rating: 8.8, wonders: '落基山脉、班夫冰川湖泊、尼亚加拉大瀑布、北极冻土、五大湖湿地、北方针叶林', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '墨西哥', flag: '🇲🇽', coord: [-102.0, 23.0], list: [
-        { title: '《墨西哥：生命狂欢之地》', rating: 8.6, wonders: '尤卡坦半岛天坑群、铜峡谷、索诺兰沙漠、东马德雷火山带、加勒比珊瑚海岸', platforms: ['哔哩哔哩'] }
-      ]}
-    ]},
-    { continent: '第五部分 南美洲', docs: [
-      { country: '巴西', flag: '🇧🇷', coord: [-53.0, -10.0], list: [
-        { title: '《野性巴西》', rating: 8.6, wonders: '亚马逊热带雨林、伊瓜苏大瀑布、潘塔纳尔湿地、巴西高原喀斯特地貌', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '秘鲁', flag: '🇵🇪', coord: [-75.0, -10.0], list: [
-        { title: '《野性秘鲁》', rating: 8.5, wonders: '安第斯山脉、亚马逊源头雨林、的的喀喀湖、科尔卡大峡谷高原地貌', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '智利', flag: '🇨🇱', coord: [-71.0, -35.0], list: [
-        { title: '《野性智利》', rating: 8.7, wonders: '阿塔卡马干沙漠、巴塔哥尼亚冰川、复活节岛、安第斯火山群、南部峡湾海岸', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '阿根廷', flag: '🇦🇷', coord: [-65.0, -38.0], list: [
-        { title: '《巴塔哥尼亚：隐秘天堂》', rating: 8.8, wonders: '莫雷诺冰川、巴塔哥尼亚荒原、潘帕斯草原、火地岛、安第斯山东麓峡谷', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '哥伦比亚', flag: '🇨🇴', coord: [-74.0, 4.0], list: [
-        { title: '《野性哥伦比亚》', rating: 8.4, wonders: '安第斯纵切山谷、亚马逊西缘雨林、加勒比海岸火山、云雾森林地貌', platforms: ['哔哩哔哩'] }
-      ]}
-    ]},
-    { continent: '第六部分 大洋洲', docs: [
-      { country: '澳大利亚', flag: '🇦🇺', coord: [133.0, -25.0], list: [
-        { title: '《狂野澳大利亚》', rating: 8.9, wonders: '乌鲁鲁巨石、大堡礁珊瑚群、辛普森红沙漠、塔斯马尼亚雨林、蓝山峡谷', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《BBC 大堡礁》', rating: 9.3, wonders: '全球最大珊瑚礁系统、海底山脉、热带深海地貌、珊瑚生态系统', platforms: ['哔哩哔哩'] }
-      ]},
-      { country: '新西兰', flag: '🇳🇿', coord: [172.0, -41.0], list: [
-        { title: '《新西兰：神话之岛》', rating: 9.1, wonders: '米尔福德峡湾、南阿尔卑斯雪山、罗托鲁瓦地热火山、温带原始雨林', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]},
-      { country: '巴布亚新几内亚', flag: '🇵🇬', coord: [145.0, -6.0], list: [
-        { title: '《野性巴布亚新几内亚》', rating: 8.5, wonders: '热带雨林山地、活火山群、珊瑚环礁、雨林峡谷地貌', platforms: ['哔哩哔哩'] }
-      ]}
-    ]},
-    { continent: '第七部分 极地与全球全景', docs: [
-      { country: '南北极地', flag: '🧊', coord: [0, 90.0], list: [
-        { title: '《冰冻星球》', rating: 9.7, wonders: '南极冰盖、北极海冰、冰川崩解、极地极光、冻土苔原生态', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]},
-      { country: '全球综合全景', flag: '🌏', coord: [116.4, 39.9], list: [
-        { title: '《地球脉动 1-3 季》', rating: '9.7/9.8/9.9', wonders: '覆盖全球七大洲各国标志性地貌，自然纪录片天花板作品', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《七个世界，一个星球》', rating: 9.7, wonders: '按七大洲分集，每一集囊括大洲内多个国家代表性自然奇观', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《蓝色星球 1-2 季》', rating: '9.6/9.8', wonders: '全球海洋奇观合集，涵盖各国海岸、深海海沟、珊瑚群岛地貌', platforms: ['哔哩哔哩', '腾讯视频'] },
-        { title: '《完美星球》', rating: 9.6, wonders: '以火山、阳光、天气、海洋四大力量讲解全球各国地貌形成原理', platforms: ['哔哩哔哩', '腾讯视频'] }
-      ]}
-    ]}
-  ];
-  var app = document.getElementById('app');
-  var html = '';
-  DATA.forEach(function(section) {
-    html += '<section class="continent-section">';
-    html += '<div class="continent-header"><span class="continent-title">' + section.continent + '</span></div>';
-    html += '<div class="country-grid">';
-    section.docs.forEach(function(country) {
-      html += '<div class="country-card">';
-      html += '<div class="country-header">';
-      html += '<div><span class="country-flag">' + country.flag + '</span> <span class="country-name">' + country.country + '</span></div>';
-      html += '<a href="earth-globe.html?country=' + encodeURIComponent(country.country) + '&lon=' + country.coord[0] + '&lat=' + country.coord[1] + '" class="country-globe-btn" title="在3D地球上定位此国家">🌍 定位</a>';
-      html += '</div>';
-      country.list.forEach(function(doc) {
-        html += '<div class="doc-item">';
-        html += '<div class="doc-title-row"><span class="doc-title">' + doc.title + '</span><span class="doc-rating">⭐ ' + doc.rating + '</span></div>';
-        html += '<div class="doc-wonders">' + doc.wonders + '</div>';
-        html += '<div class="doc-platforms">';
-        doc.platforms.forEach(function(p) { html += '<span class="platform-tag">' + p + '</span>'; });
-        html += '</div></div>';
+  <div id="cesiumContainer"></div>
+
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="text">正在加载地球...</div>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+
+  <script>
+    (function () {
+
+      var viewer = new Cesium.Viewer('cesiumContainer', {
+        animation: false, timeline: false, baseLayerPicker: false,
+        homeButton: false, geocoder: false, navigationHelpButton: false,
+        infoBox: false, selectionIndicator: false,
+        imageryProvider: false,
       });
-      html += '</div>';
-    });
-    html += '</div></section>';
-  });
-  app.innerHTML = html;
-})();
-</script>
+
+      var scene = viewer.scene;
+      var globe = scene.globe;
+
+      var MIN_HEIGHT = 2000000;
+      var MAX_HEIGHT = 3000000;
+      var CENTER_LON = 116.4;
+      var CENTER_LAT = 39.9;
+
+      scene.screenSpaceCameraController.enableTranslate = false;
+      scene.screenSpaceCameraController.enableTilt = false;
+      scene.screenSpaceCameraController.enableZoom = true;
+
+      globe.maximumScreenSpaceError = 16;
+      globe.tileCacheSize = 6000;
+
+      var qualitySteps = [16, 10, 6, 4, 2.8, 2.0];
+      var qualityTimer = null;
+      var qualityStepIndex = 0;
+      var started = false;
+      var overlay = document.getElementById('loadingOverlay');
+      var progressBar = document.getElementById('progressBar');
+      var progressText = overlay.querySelector('.text');
+
+      function startReveal() {
+        if (started) return;
+        started = true;
+        function nextStep() {
+          if (qualityStepIndex >= qualitySteps.length) {
+            progressBar.style.width = '100%';
+            progressText.textContent = '正在预载球背...';
+            startBackgroundPreload();
+            return;
+          }
+          globe.maximumScreenSpaceError = qualitySteps[qualityStepIndex];
+          progressBar.style.width = ((qualityStepIndex + 1) / qualitySteps.length * 100) + '%';
+          qualityStepIndex++;
+          qualityTimer = setTimeout(nextStep, 400);
+        }
+        nextStep();
+      }
+
+      var preloadTotal = 0;
+      var preloadDone = 0;
+
+      function startBackgroundPreload() {
+        var size = 1 << 6;
+        var urls = [];
+        for (var y = 0; y < size; y++) {
+          for (var x = 0; x < size; x++) {
+            urls.push('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/' + y + '/' + x);
+          }
+        }
+        preloadTotal = urls.length;
+        var BATCH = 128;
+        var index = 0;
+        function loadBatch() {
+          if (index >= preloadTotal) {
+            progressText.textContent = '加载完成';
+            progressBar.style.width = '100%';
+            setTimeout(function () { overlay.classList.add('hidden'); }, 400);
+            return;
+          }
+          var batchEnd = Math.min(index + BATCH, preloadTotal);
+          var batchUrls = urls.slice(index, batchEnd);
+          index = batchEnd;
+          var pending = batchUrls.length;
+          batchUrls.forEach(function (u) {
+            var img = new Image();
+            img.onload = img.onerror = function () {
+              preloadDone++;
+              pending--;
+              progressBar.style.width = Math.round(preloadDone / preloadTotal * 100) + '%';
+              if (pending === 0) setTimeout(loadBatch, 50);
+            };
+            img.src = u;
+          });
+        }
+        loadBatch();
+      }
+
+      scene.preRender.addEventListener(function () {
+        var position = viewer.camera.positionCartographic;
+        var h = position.height;
+        if (h < MIN_HEIGHT || h > MAX_HEIGHT) {
+          var clampedH = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, h));
+          viewer.camera.position = Cesium.Cartesian3.fromDegrees(
+            Cesium.Math.toDegrees(position.longitude),
+            Cesium.Math.toDegrees(position.latitude), clampedH);
+        }
+      });
+
+      scene.skyAtmosphere = new Cesium.SkyAtmosphere(Cesium.Ellipsoid.WGS84);
+      scene.skyBox = new Cesium.SkyBox({
+        sources: {
+          positiveX: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_px.jpg'),
+          negativeX: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mx.jpg'),
+          positiveY: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_py.jpg'),
+          negativeY: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_my.jpg'),
+          positiveZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_pz.jpg'),
+          negativeZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'),
+        },
+      });
+      globe.enableLighting = true;
+      globe.lambertDiffuseMultiplier = 0.75;
+      globe.baseColor = Cesium.Color.fromCssColorString('#0a1628');
+      globe.showGroundAtmosphere = true;
+
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          minimumLevel: 1,
+          maximumLevel: 6,
+          credit: 'Esri World Imagery',
+        })
+      );
+
+      viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(CENTER_LON, CENTER_LAT, MIN_HEIGHT),
+        orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
+      });
+
+      document.addEventListener('keydown', function (e) {
+        var key = e.key.toLowerCase();
+        if (key === 'r') {
+          viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(CENTER_LON, CENTER_LAT, MIN_HEIGHT),
+            orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
+            duration: 2.5,
+          });
+        }
+      });
+
+      setTimeout(startReveal, 1500);
+
+      console.log('3D 地球 · 纯地图模式');
+    })();
+  </script>
 </body>
 </html>
