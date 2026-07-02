@@ -1,6 +1,13 @@
 {
   "projects": [
     {
+      "name": "AI 漫剧生成平台",
+      "tech": ["SpringBoot", "Vue", "Element Plus", "MyBatis Plus", "JWT"],
+      "desc": "接入 22 家 AI 厂商，一键将故事文本转化为漫画视频。智能角色提取、分镜拆分、三视图生成、视频合成，全程 AI 驱动。",
+      "category": "AIGC",
+      "repoLink": "https://github.com/SharpWord/ai-comic-drama"
+    },
+    {
       "name": "AI 小说推文动画平台",
       "tech": ["SpringBoot", "Vue", "Python", "Stable Diffusion"],
       "desc": "一个人扛起全栈。从架构设计到AIGC落地，把视频制作从 2 天压缩到 10 分钟。",
